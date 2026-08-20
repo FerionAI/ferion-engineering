@@ -1,0 +1,66 @@
+name: release-please
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      # 1st pass: open/update the release PR from the conventional commits.
+      - uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      # An open release PR carries the "autorelease: pending" label (release-please adds it).
+      - name: Find the open release PR
+        id: find
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          n=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open \
+                --label "autorelease: pending" --json number,headRefName \
+                --jq '.[0].number // empty')
+          b=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open \
+                --label "autorelease: pending" --json number,headRefName \
+                --jq '.[0].headRefName // empty')
+          echo "number=$n" >> "$GITHUB_OUTPUT"
+          echo "branch=$b"  >> "$GITHUB_OUTPUT"
+          [ -n "$n" ] && echo "Release PR: #$n ($b)" || echo "No open release PR — nothing to ship."
+
+      # The human merge used to be the only gate. Without it, validation MUST run here:
+      # it is what stops a broken release from publishing itself.
+      - if: steps.find.outputs.number != ''
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.find.outputs.branch }}
+      - if: steps.find.outputs.number != ''
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - if: steps.find.outputs.number != ''
+        run: pip install pyyaml
+      - name: Validate the release contents (the gate that replaces the human merge)
+        if: steps.find.outputs.number != ''
+        run: sh scripts/validate-plugin.sh
+
+      - name: Merge the release PR
+        if: steps.find.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr merge "${{ steps.find.outputs.number }}" --repo "$GITHUB_REPOSITORY" --squash --delete-branch
+
+      # 2nd pass, required: a push made with GITHUB_TOKEN does NOT re-trigger workflows.
+      # Without this step the PR would merge but the tag and GitHub Release would never be cut.
+      - name: Cut the release (tag + GitHub Release)
+        if: steps.find.outputs.number != ''
+        uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

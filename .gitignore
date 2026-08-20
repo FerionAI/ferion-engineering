@@ -1,0 +1,7 @@
+node_modules/
+.DS_Store
+*.log
+dist/
+
+# Your team's real configuration never ships. Only the .example is versioned.
+config/team-config.md
