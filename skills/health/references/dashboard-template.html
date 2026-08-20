@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Engineering health — week of {{WEEK}}</title>
+<!--
+  TEMPLATE. Replace every {{PLACEHOLDER}} with a real number pulled from a real source.
+  Rule #1 (see the `health` skill): no metric ships without its previous value and the delta.
+  A metric you could not collect gets class="pending" and the text "pending connection" — never
+  an invented number, never the current value repeated as if it were last week's.
+  Colour is semantic (good/warn/bad), not tied to the arrow: errors falling is good, coverage
+  falling is bad.
+-->
+<style>
+  :root{
+    --bg:#fff; --fg:#111827; --muted:#6b7280; --card:#f9fafb; --line:#e5e7eb;
+    --good:#15803d; --warn:#b45309; --bad:#b91c1c; --pending:#6b7280;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0b0f19; --fg:#e5e7eb; --muted:#9ca3af; --card:#111827; --line:#1f2937;
+           --good:#4ade80; --warn:#fbbf24; --bad:#f87171; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:32px;background:var(--bg);color:var(--fg);
+       font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+  header{max-width:1100px;margin:0 auto 28px}
+  h1{font-size:22px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:13px}
+  main{max-width:1100px;margin:0 auto}
+  section{margin:0 0 28px}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+     margin:0 0 12px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
+  .label{font-size:12px;color:var(--muted);margin-bottom:6px}
+  .value{font-size:26px;font-weight:600;line-height:1.1}
+  .delta{font-size:12px;margin-top:6px}
+  .good{color:var(--good)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+  .pending .value{color:var(--pending);font-size:15px;font-weight:400;font-style:italic}
+  .read{font-size:12px;color:var(--muted);margin-top:8px}
+  ul.first{background:var(--card);border:1px solid var(--line);border-radius:10px;
+           padding:14px 14px 14px 32px;margin:0}
+  ul.first li{margin:0 0 8px}
+  ul.first li:last-child{margin:0}
+  footer{max-width:1100px;margin:32px auto 0;color:var(--muted);font-size:12px;
+         border-top:1px solid var(--line);padding-top:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Engineering health</h1>
+  <div class="sub">Week of {{WEEK}} · compared with {{PREVIOUS_WEEK}} · generated {{GENERATED_AT}}</div>
+</header>
+
+<main>
+  <section>
+    <h2>Where to look first</h2>
+    <ul class="first">
+      <li>{{BIGGEST_REGRESSION}} — what changed and the suggested action.</li>
+      <li>{{BIGGEST_IMPROVEMENT}} — what worked, so it can be repeated.</li>
+      <li>{{POST_PREFLIGHT_FINDINGS}} automated findings after preflight (target 0) — each one becomes a new checklist rule.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>DORA</h2>
+    <div class="grid">
+      <div class="tile"><div class="label">Deployment frequency</div>
+        <div class="value">{{DEPLOY_FREQ}}</div>
+        <div class="delta good">was {{DEPLOY_FREQ_PREV}} · improved</div></div>
+      <div class="tile"><div class="label">Lead time for changes</div>
+        <div class="value">{{LEAD_TIME}}</div>
+        <div class="delta warn">was {{LEAD_TIME_PREV}} · worsened</div></div>
+      <div class="tile"><div class="label">Change failure rate</div>
+        <div class="value">{{CFR}}</div>
+        <div class="delta bad">was {{CFR_PREV}} · worsened</div></div>
+      <div class="tile"><div class="label">Recovery time (MTTR)</div>
+        <div class="value">{{MTTR}}</div>
+        <div class="delta">was {{MTTR_PREV}} · stable</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Quality and security</h2>
+    <div class="grid">
+      <div class="tile"><div class="label">Quality gate (new code)</div>
+        <div class="value">{{QUALITY_GATE}}</div><div class="delta">was {{QUALITY_GATE_PREV}}</div></div>
+      <div class="tile"><div class="label">Coverage (new code)</div>
+        <div class="value">{{COVERAGE}}</div><div class="delta good">was {{COVERAGE_PREV}}</div></div>
+      <div class="tile"><div class="label">Open vulnerabilities</div>
+        <div class="value">{{VULNS}}</div><div class="delta">was {{VULNS_PREV}}</div></div>
+      <div class="tile pending"><div class="label">Hotspots to review</div>
+        <div class="value">pending connection</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Observability and UX</h2>
+    <div class="grid">
+      <div class="tile"><div class="label">Error rate</div>
+        <div class="value">{{ERROR_RATE}}</div><div class="delta good">was {{ERROR_RATE_PREV}}</div></div>
+      <div class="tile"><div class="label">p99 latency</div>
+        <div class="value">{{P99}}</div><div class="delta">was {{P99_PREV}}</div></div>
+      <div class="tile"><div class="label">LCP / INP / CLS</div>
+        <div class="value">{{CWV}}</div><div class="delta">was {{CWV_PREV}}</div></div>
+      <div class="tile"><div class="label">Open incidents</div>
+        <div class="value">{{INCIDENTS}}</div><div class="delta">was {{INCIDENTS_PREV}}</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Cost and efficiency</h2>
+    <div class="grid">
+      <div class="tile"><div class="label">Capture coverage</div>
+        <div class="value">{{COST_COVERAGE}}</div>
+        <div class="read">Below 50% the block is a sample, not a measurement.</div></div>
+      <div class="tile"><div class="label">Median cost per issue</div>
+        <div class="value">{{COST_MEDIAN}}</div><div class="delta good">was {{COST_MEDIAN_PREV}}</div></div>
+      <div class="tile"><div class="label">Median active time</div>
+        <div class="value">{{TIME_MEDIAN}}</div><div class="delta">was {{TIME_MEDIAN_PREV}}</div></div>
+      <div class="tile"><div class="label">Cost per epic (top)</div>
+        <div class="value">{{EPIC_COST}}</div>
+        <div class="read">{{EPIC_NAME}} — the number that prices the initiative.</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Process effectiveness</h2>
+    <div class="grid">
+      <div class="tile"><div class="label">⭐ Findings after preflight</div>
+        <div class="value">{{POST_PREFLIGHT_FINDINGS}}</div>
+        <div class="read">Target 0. Each one becomes a rule in the preflight checklist.</div></div>
+      <div class="tile"><div class="label">Preflight green first try</div>
+        <div class="value">{{PREFLIGHT_FIRST_TRY}}</div><div class="delta">was {{PREFLIGHT_FIRST_TRY_PREV}}</div></div>
+      <div class="tile"><div class="label">Pipeline adoption</div>
+        <div class="value">{{PIPELINE_ADOPTION}}</div><div class="delta">was {{PIPELINE_ADOPTION_PREV}}</div></div>
+      <div class="tile pending"><div class="label">Usage per skill</div>
+        <div class="value">pending connection</div></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  Sources: {{SOURCES}}. Metrics marked “pending connection” were not collected — they are not
+  estimates. Cost in USD is a client-side estimate derived from tokens, not an invoice.
+  Per issue, per type and per team — never per person.
+</footer>
+</body>
+</html>

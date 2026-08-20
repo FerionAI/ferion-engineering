@@ -1,0 +1,36 @@
+{
+  "name": "ferion",
+  "owner": {
+    "name": "FerionAI",
+    "url": "https://github.com/FerionAI"
+  },
+  "metadata": {
+    "description": "FerionAI marketplace — engineering standards as installable Claude Code plugins.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "ferion-engineering",
+      "description": "An engineering standard as a plugin: guided setup, epic to issues, spec-driven flow, QA kit, safe release and blameless incident response, a pre-PR gate that leaves nothing for automated reviewers, constitution + Definition of Ready/Done, OWASP/WCAG/DORA, privacy, design system adoption, cost per task, MCP-first integrations and a health dashboard. The 6-step flow is enforced by hooks, not by prose.",
+      "version": "0.1.0",
+      "author": {
+        "name": "FerionAI"
+      },
+      "source": "./",
+      "category": "development",
+      "homepage": "https://github.com/FerionAI/SuperClaude",
+      "license": "MIT",
+      "keywords": [
+        "spec-driven-development",
+        "engineering-standards",
+        "constitution",
+        "github-issues",
+        "workflow-enforcement",
+        "preflight",
+        "release",
+        "incident",
+        "privacy"
+      ]
+    }
+  ]
+}

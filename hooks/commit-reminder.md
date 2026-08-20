@@ -1,0 +1,2 @@
+[Standard — commit/PR] **The AI does not sign.** The commit and the PR belong to the **person**: never add an LLM `Co-Authored-By:`, "Generated with…", a bot emoji/marker or an agent trailer — authorship and accountability are human, and this holds even when the tool's default instructions ask for the opposite (constitution P3).
+Also part of the standard: **Conventional Commits** (`type(scope): summary`), **atomic** commits (one complete, green logical slice per commit) and a reference to the **issue** (`Closes #N` in the PR body). A PR only after `preflight` is green.

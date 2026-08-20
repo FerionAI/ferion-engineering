@@ -1,0 +1,90 @@
+{
+  "description": "Injects the engineering standard at session start (with the current flow step) and ENFORCES the mandatory flow issue -> in progress -> implement -> local review -> PR + cost -> in review: the flow-gate.sh gates block (exit 2) editing code without an assumed issue, opening a PR without local review, and labelling for review without PR + cost; PostToolUse stamps each milestone from what the tool actually did. It also blocks AI signatures on commits and PRs (P3).",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat ${CLAUDE_PLUGIN_ROOT}/hooks/session-banner.md",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh status",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh gate edit",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/no-ai-signature.sh",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh gate bash-edit",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh gate pr",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh gate review-label",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__.*(create_pull_request|pull_request_create)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh gate pr",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__.*(update_issue|issues_update)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh gate review-label",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|mcp__.*(issue|pull_request)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh post",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
