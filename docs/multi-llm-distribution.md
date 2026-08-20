@@ -35,7 +35,7 @@ touches a principle. Never edit loose copies inside product repositories.
 
 1. Add the marketplace and install:
    ```bash
-   /plugin marketplace add FerionAI/SuperClaude
+   /plugin marketplace add FerionAI/ferion-engineering
    /plugin install ferion-engineering@ferion
    ```
 2. You now have all the skills plus the always-on hooks automatically.
