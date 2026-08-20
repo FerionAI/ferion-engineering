@@ -43,7 +43,7 @@ each of those steps worth taking.
 This repository is a **Claude Code marketplace**:
 
 ```bash
-/plugin marketplace add FerionAI/SuperClaude
+/plugin marketplace add FerionAI/ferion-engineering
 /plugin install ferion-engineering@ferion
 ```
 

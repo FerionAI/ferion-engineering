@@ -5,8 +5,8 @@
   "author": {
     "name": "FerionAI"
   },
-  "homepage": "https://github.com/FerionAI/SuperClaude",
-  "repository": "https://github.com/FerionAI/SuperClaude.git",
+  "homepage": "https://github.com/FerionAI/ferion-engineering",
+  "repository": "https://github.com/FerionAI/ferion-engineering.git",
   "license": "MIT",
   "mcpServers": "./.mcp.json",
   "keywords": [
