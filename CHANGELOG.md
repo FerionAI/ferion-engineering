@@ -4,6 +4,15 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0](https://github.com/FerionAI/ferion-engineering/compare/ferion-engineering-v0.1.0...ferion-engineering-v0.2.0) (2026-08-26)
+
+
+### Features
+
+* **cost:** measure cost per issue, not per session ([7356985](https://github.com/FerionAI/ferion-engineering/commit/735698515f9ee303b7055fd791d52046a3303033))
+* initial open source release of ferion-engineering ([a9ed13a](https://github.com/FerionAI/ferion-engineering/commit/a9ed13a2bac97d528b549da9a68dc377b1f97f11))
+* **preflight:** target the reviewer that exists, block PRs with no trail ([3c0bc5c](https://github.com/FerionAI/ferion-engineering/commit/3c0bc5c18ca170ff922b71d7c0e44c32af7e5f50))
+
 ## 0.1.0 (2026-08-20)
 
 First open source release.
