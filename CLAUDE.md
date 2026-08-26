@@ -41,7 +41,8 @@ signatures, P3) and issue transitions), `.mcp.json`, `config/team-config.example
 that **block (exit 2)** an out-of-order step — editing code without an assumed issue, opening a PR
 without local review (`stamp review` from `preflight`), labelling for review without PR + cost.
 `PostToolUse` stamps the milestones from what the tool actually did; the only exception is
-`bypass "<reason>"` (recorded and declared in the summary). Mechanics:
+`bypass "<reason>"` (recorded and declared in the summary). The state also holds each issue's cost
+`baseline`, so `cost` measures **per issue, not per session**. Mechanics:
 `skills/start/references/mandatory-flow.md`; checks: `hooks/flow-gate.test.sh`.
 
 ## Key decisions (do not reopen without reason)

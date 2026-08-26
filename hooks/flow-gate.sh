@@ -6,6 +6,8 @@
 # Milestones are stamped from what the tool ACTUALLY did (PostToolUse), never from a claim.
 #
 # State: <gitdir>/ferion-flow (outside version control). Outside a git repo: blocks nothing, stays silent.
+# It also keeps each issue's cost `baseline` (UTC) — what `cost` measures from, so one session's
+# second issue does not inherit the first one's tokens.
 set -uo pipefail
 
 cmd=${1:-status}
@@ -47,7 +49,8 @@ flow_status() {
   if [ -n "$(get dev)" ]; then m="$m · in progress ok"; else m="$m · in progress MISSING"; next="assume the issue (assignee) and label it \`status:in-progress\` (skill \`issues\`)"; fi
   if [ -n "$(get review)" ]; then m="$m · local review ok"; elif [ -z "$next" ]; then next="implement (spec-flow/ship), then close the local review: \`review\` + \`preflight\` until ZERO findings, then \`$self stamp review\`"; fi
   if [ -n "$(get pr)" ]; then m="$m · PR ok"; elif [ -z "$next" ]; then next="open the PR linked to the issue (\`gh pr create\` with \`Closes #$t\`)"; fi
-  if [ -n "$(get cost)" ]; then m="$m · cost ok"; elif [ -z "$next" ]; then next="record the dev cost on the issue (skill \`cost\`: tokens, USD and hours)"; fi
+  local base; base=$(get baseline)
+  if [ -n "$(get cost)" ]; then m="$m · cost ok"; elif [ -z "$next" ]; then next="record the dev cost on the issue (skill \`cost\`: tokens, USD and hours${base:+ **for this issue**, measured since $base})"; fi
   if [ -n "$(get in_review)" ]; then m="$m · in review ok"; next="flow closed (QA and deploy are human gates). New issue: \`$self stamp task <number>\`"; elif [ -z "$next" ]; then next="label the issue \`status:in-review\`"; fi
   echo "[Flow] issue **#$t** — $m. Next step: $next."
 }
@@ -83,7 +86,9 @@ case "$cmd" in
         key=${3:-}
         [ -n "$key" ] || { echo "usage: $self stamp task <issue-number>" >&2; exit 1; }
         [ "$key" != "$(get task)" ] && rm -f "$F"   # new issue = new flow (clears milestones and bypass)
-        put task "$key" ;;
+        put task "$key"
+        # cost baseline: from here on `cost` measures THIS issue only (a session may hold several).
+        [ -n "$(get baseline)" ] || put baseline "$(date -u +%Y-%m-%dT%H:%M:%SZ)" ;;
       dev|review|pr|cost|in_review)
         [ -n "$(get task)" ] || { echo "[Flow] register the issue first: \`$self stamp task <number>\`" >&2; exit 1; }
         put "$arg" "${3:-1}" ;;

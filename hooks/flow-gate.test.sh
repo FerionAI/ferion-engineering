@@ -64,5 +64,15 @@ check 0 "$(g gate edit "$edit_repo")"      "a recorded bypass releases"
 s stamp task 43
 check 2 "$(g gate edit "$edit_repo")"      "a new issue clears the bypass and the milestones"
 
+# 7) The cost baseline is born with the issue and only moves when the issue does
+s stamp task 44
+b1=$(sed -n 's/^baseline=//p' "$T/.git/ferion-flow" | tail -1)
+check 1 "$(printf '%s' "$b1" | grep -c '^[0-9]')" "a new issue writes the cost baseline"
+s stamp task 44
+check "$b1" "$(sed -n 's/^baseline=//p' "$T/.git/ferion-flow" | tail -1)" "the same issue keeps its baseline"
+printf 'baseline=2000-01-01T00:00:00Z\n' >> "$T/.git/ferion-flow"
+s stamp task 45
+check 0 "$(grep -c '2000-01-01T00:00:00Z' "$T/.git/ferion-flow")" "a new issue clears the previous baseline"
+
 rm -rf "$T"
-[ "$fails" -eq 0 ] && echo "OK flow-gate: 18 cases" || { echo "x flow-gate: $fails failure(s)"; exit 1; }
+[ "$fails" -eq 0 ] && echo "OK flow-gate: 21 cases" || { echo "x flow-gate: $fails failure(s)"; exit 1; }
