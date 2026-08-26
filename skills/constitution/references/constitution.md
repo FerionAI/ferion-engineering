@@ -13,7 +13,7 @@
 > A placeholder left unfilled is a known gap, not a default: skills degrade with a warning
 > instead of guessing.
 
-**Version:** 0.1.0 · **Last updated:** 2026-08-20 · **Owner:** `<FILL: who owns the standard>` <!-- x-release-please-version -->
+**Version:** 0.2.0 · **Last updated:** 2026-08-20 · **Owner:** `<FILL: who owns the standard>` <!-- x-release-please-version -->
 
 ---
 
