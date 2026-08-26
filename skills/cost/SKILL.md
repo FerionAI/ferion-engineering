@@ -28,12 +28,21 @@ Where the numbers come from — **one command** (see `references/capture.md`):
 
 ```bash
 python3 <path to this skill>/scripts/session-cost.py
-# {"session":"…","tokens":1403090,"usd":2.0489,"active_hours":0.17,"wall_hours":0.49,"models":["claude-opus-5"],…}
+# {"session":"…","scope":"issue","issue":"123","since":"2026-08-26T15:49:18Z","tokens":138034,"usd":0.1066,…}
 ```
 
-It resolves the repository's current session, takes tokens/USD from `ccusage` (the same source as
-`/usage`) and the hours from the transcript timestamps. Sum per issue using the issue number (the
-branch/PR convention already references it — `issues`).
+It resolves the repository's current session, counts tokens and hours in the transcript, and takes the
+USD from `ccusage` (the same source as `/usage`).
+
+**One session can hold several issues — the cost must not become one bucket.** So `flow-gate.sh` writes
+a **baseline** (UTC) into the repo flow state on every new issue, and the script measures **from there
+onwards** (`scope:"issue"`). Nothing to do by hand: switch issue, the cost resets with it. Edge cases:
+
+- `--whole-session` — ignore the baseline (`scope:"session"`); that is what applies when the flow is in
+  `bypass` or the repo has no flow state.
+- `--since=<ISO>` — an explicit baseline (resuming an old issue, fixing a bad cut).
+- The slice's USD is the model's `ccusage` cost **prorated by the relative price of its tokens**
+  (output 5x input, cache write 1.25x/2x, cache read 0.1x) — exact per model, still an estimate.
 
 ## 2. Record it ON the issue (primary)
 
@@ -62,6 +71,9 @@ Rules:
   is stamped from reality, never from a claim.
 - **Several sessions on the same issue:** read the previous comment and **add to it**, or post a new
   comment and let `health` sum them. Be consistent; say which you did.
+- **Several issues in the same session:** do not add anything up — the script already cuts at the
+  issue's baseline (above). If it says `scope:"session"` where it should say `issue`, the number covers
+  the whole session: say that in the comment.
 - **No number** (app flow, `ccusage` unavailable): **do not post a number** — comment what you have
   and flag it in the summary. Never invent a cost.
 - **Never put PII in a cost record** (privacy): issue number and team, not a person's data.

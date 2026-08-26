@@ -5,23 +5,36 @@ Two steps: get the number, then write it where it belongs. Both are one command.
 ## Step A — get the number
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/skills/cost/scripts/session-cost.py
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/cost/scripts/session-cost.py                 # this issue — the normal case
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/cost/scripts/session-cost.py --whole-session  # ignore the baseline
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/cost/scripts/session-cost.py --since=2026-08-26T15:49:18Z
 ```
 
 ```json
-{"session":"abc123","tokens":1403090,"usd":2.0489,"active_hours":0.17,"wall_hours":0.49,
- "models":["claude-opus-5"],"token_detail":{"in":1201000,"out":21000,"cache_read":180000,"cache_write":1090}}
+{"session":"abc123","scope":"issue","issue":"123","since":"2026-08-26T15:49:18Z","tokens":138034,
+ "usd":0.1066,"active_hours":0.17,"wall_hours":0.49,"models":["claude-opus-5"],
+ "token_detail":{"in":2,"out":271,"cache_read":134504,"cache_write":3257}}
 ```
 
 What it does:
 
 - **Finds the session** — the most recent transcript for the current repository
   (`~/.claude/projects/<slugified-cwd>/*.jsonl`), or the id/path you pass as an argument.
-- **Tokens and USD** come from `ccusage` (the same source as `/usage`). Needs `npx`; without network
-  it degrades to `null` — pass `--no-usd` to skip it deliberately.
+- **Cuts at the issue's baseline** — `flow-gate.sh stamp task <n>` writes `baseline=<UTC>` into
+  `<gitdir>/ferion-flow`, and the script measures from there, so **two issues in one session do not add
+  up**. The baseline does not move while the issue is the same (a second session on the same issue is a
+  new slice — that one you **do** add on the issue). In `bypass` there is no issue and no baseline: the
+  scope falls back to the whole session.
+- **Tokens** are summed from the transcript itself (in/out/cache, deduped per request) — they match
+  `ccusage` when the scope is the whole session.
+- **USD** comes from `ccusage` (the same source as `/usage`), prorated onto the slice by the price
+  weight of its tokens (`WEIGHT` in the script: output 5x input, cache write 1.25x at 5 min / 2x at
+  1 h, cache read 0.1x). Needs `npx`; without network it degrades to `null` — pass `--no-usd` to skip
+  it deliberately.
 - **Hours** come from the transcript timestamps. **Active** time caps each gap at 5 minutes
   (`GAP_MAX`), so a coffee break does not get billed as AI time; **wall** time is first to last event.
-- `--selftest` checks the time math (it runs in CI through `validate-plugin.sh`).
+- `--selftest` checks the time math, the slicing and the proration (it runs in CI through
+  `validate-plugin.sh`).
 
 A `null` field means the number is unavailable. **Do not invent it** — comment what you have and say
 so in the summary.
@@ -55,8 +68,8 @@ Three rules that are not style preferences:
 
 | Number | Source | Trust it for |
 |---|---|---|
-| tokens | `ccusage` (local transcripts) | comparison, trend, per-task ranking |
-| USD | `ccusage` price table × tokens | estimates, not invoices |
+| tokens | the local transcript, per issue slice | comparison, trend, per-task ranking |
+| USD | `ccusage` price table, prorated onto the slice | estimates, not invoices |
 | active hours | transcript timestamps, gap-capped | how long the AI actually worked |
 | wall hours | first → last event | elapsed time, useful next to lead time |
 | lead time | the issue timeline (`gh issue view --json`) | DORA, the human-side number |

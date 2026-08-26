@@ -42,7 +42,8 @@ came out green; declaring it without running is the same hallucination preflight
 
 ```bash
 bash <plugin>/hooks/flow-gate.sh status            # where the flow is and what the next step is
-bash <plugin>/hooks/flow-gate.sh stamp task 123    # a new issue = a new flow (clears milestones and bypass)
+bash <plugin>/hooks/flow-gate.sh stamp task 123    # a new issue = a new flow (clears milestones and bypass,
+                                                   #   and opens this issue's cost baseline)
 bash <plugin>/hooks/flow-gate.sh stamp dev         # issue assumed outside the agent
 bash <plugin>/hooks/flow-gate.sh stamp review      # preflight came out green
 bash <plugin>/hooks/flow-gate.sh bypass "<reason>" # recorded exception (see below)
