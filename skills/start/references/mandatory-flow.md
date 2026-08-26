@@ -13,7 +13,7 @@ that touches code) operates on top of it.
 | 3 | **implement** | spec/plan in `specs/<feature>/` + code as a vertical slice with tests | — (this is the work) |
 | 4 | **local review** | `review` (DoD) + `preflight` (real tools + anti-hallucination) in a **loop until zero findings** | `stamp review` (only the agent knows) |
 | 5 | **PR + cost** | PR open with `Closes #N` **and** tokens/USD/hours recorded on the issue | `gh pr create` and `gh issue comment` with the cost marker (auto) |
-| 6 | **in review** | issue labelled `status:in-review`, and said so in the summary | `gh issue edit --add-label` (auto) |
+| 6 | **in review** | issue labelled `status:in-review`, **with the PR's CI green**, and said so in the summary | `gh issue edit --add-label` (auto) |
 
 From merge onward, humans move things (QA, deploy) — the agent has no reliable signal and does not
 invent one.
@@ -27,8 +27,8 @@ invent one.
 |---|---|---|
 | `Write`/`Edit`/`MultiEdit`/`NotebookEdit` on a repo file | step 2 | code with no assumed issue |
 | `Bash` that writes into the repo (`>`, `>>`, `sed -i`, `tee`, `git apply`, `patch`) | step 2 | the same thing, through the back door |
-| `gh pr create` / the MCP equivalent | step 4 | a PR without the local review closed |
-| labelling `status:in-review` (with step 2 done) | steps 4+5 | moving to review without the PR **and** the cost |
+| `gh pr create` / the MCP equivalent | step 4 | a PR without the local review closed · a PR **that references no issue** in the body or the branch |
+| labelling `status:in-review` (with step 2 done) | steps 4+5 | moving to review without the PR **and** the cost · labelling with a **red CI check** on the PR (the hook reads `gh pr checks`; with no `gh`/no network it does not block) |
 
 Outside a git repository, and for files outside the repo root (scratch, `/tmp`), **nothing is
 blocked** — there is no delivery there to protect.

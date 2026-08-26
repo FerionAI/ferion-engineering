@@ -120,6 +120,7 @@ sh hooks/flow-gate.test.sh || exit 1
 
 # The session cost calculation the `cost` skill writes back to the issue
 python3 skills/cost/scripts/session-cost.py --selftest || exit 1
+bash skills/preflight/scripts/pr-bots.sh --selftest || exit 1
 
 # claude plugin validate (marketplace) — only if the CLI exists (optional in CI)
 if command -v claude >/dev/null 2>&1; then

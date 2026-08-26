@@ -77,6 +77,15 @@ block() { # <title> <steps...>
 
 bypassed() { [ -n "$(get bypass)" ]; }
 
+ci_red() { # <PR ref> -> 0 when a check IS failing. No gh / no auth / no checks: never blocks.
+  local ref=$1 out
+  [ -n "$ref" ] && [ "$ref" != "1" ] || return 1
+  command -v gh >/dev/null 2>&1 || return 1
+  out=$(gh pr checks "$ref" 2>/dev/null) || true
+  [ -n "$out" ] || return 1
+  grep -qiE '(^|[[:space:]])(fail|failure)([[:space:]]|$)' <<<"$out"
+}
+
 case "$cmd" in
   status) [ -n "$gitdir" ] && flow_status ;;
 
@@ -141,7 +150,14 @@ case "$cmd" in
         bypassed || [ -n "$(get review)" ] || block \
           "opening a PR without closing the local review." \
           "Run the local review: \`review\` (Definition of Done) and \`preflight\` (real tools + anti-hallucination) in a LOOP until zero findings." \
-          "Only once it is green: \`$self stamp review\`, then open the PR." ;;
+          "Only once it is green: \`$self stamp review\`, then open the PR."
+        # A PR nobody can trace back to an issue is a PR nobody can measure later (cost, lead time, adoption).
+        # Match the whole payload, not the extracted command: escaped quotes in --title truncate the value.
+        t=$(get task); branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+        [ -z "$t" ] || bypassed || grep -qE "#$t([^0-9]|$)" <<<"$payload" || grep -qE "(^|[^0-9])$t([^0-9]|$)" <<<"$branch" || block \
+          "opening a PR that does not reference issue #$t (not in the body, not in the branch)." \
+          "Link it in the body: \`gh pr create --body \"Closes #$t\" …\` (or name the branch \`<type>/$t-<slug>\`)." \
+          "That reference is the only thread tying PR to issue: without it, cost, lead time and pipeline adoption stop being measurable." ;;
 
       review-label)
         cmdline=$(val command "$payload")
@@ -156,6 +172,11 @@ case "$cmd" in
             "moving the issue to review with the milestone half done." \
             "$(missing_for_review)" \
             "Is this a DIFFERENT move (status regression, manual correction)? \`$self bypass \"out-of-flow move: <reason>\"\`."
+          # The gate blocks the PR from OPENING; here it looks again: review with a red CI is guaranteed rework.
+          bypassed || ! ci_red "$(get pr)" || block \
+            "labelling for review with a failing CI check on PR $(get pr)." \
+            "See what broke: \`gh pr checks $(get pr)\` — fix it in the SAME PR and wait for green." \
+            "\`preflight\` runs the tools locally; if CI caught what it did not, add that rule to the checklist (\`preflight/references/preflight-checklist.md\`)."
         fi
         cat "$here/issue-transition-reminder.md" ;;
       *) exit 0 ;;
@@ -190,7 +211,9 @@ case "$cmd" in
 
     # PR opened
     if grep -qE 'gh +pr +create' <<<"$cmdline" || grep -qE 'create_pull_request|pull_request_create' <<<"$payload"; then
-      [ -n "$(get task)" ] && { put pr 1; changed=1; }
+      # keep the PR URL (gh prints it): the in-review milestone checks that PR's CI through it
+      ref=$(grep -oE 'https://[^"[:space:]]+/pull/[0-9]+' <<<"$payload" | head -1)
+      [ -n "$(get task)" ] && { put pr "${ref:-1}"; changed=1; }
     fi
 
     # Issue labelled for review (the last milestone)

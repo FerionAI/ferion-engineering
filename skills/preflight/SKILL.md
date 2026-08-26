@@ -47,6 +47,25 @@ Execute and require green (real commands in `context`):
 
 If any of them fails, fix it before moving on. The numbers come from execution, not assumption.
 
+## Step 1.2 — Who actually reviews this repo (and who is mute)
+
+"Zero automated findings" only means something against the reviewers that **exist in this repo** —
+which are rarely the ones you assume. Find out instead of guessing:
+
+```bash
+bash ${CLAUDE_PLUGIN_ROOT}/skills/preflight/scripts/pr-bots.sh    # current repo, last 20 PRs
+```
+
+- **ALIVE bots** = the list the checklist has to anticipate. If one of them keeps flagging something
+  step 1 does not catch, **fold that rule into the checklist** — same law as any preflight defect.
+- **MUTE bots** (quota exhausted, subscription paused, unlicensed seat) post a notice and go quiet: the
+  PR ships **with no review at all** while looking reviewed. When there is one, **say it in the
+  summary** ("this PR gets no automated review: `<bot>` is out of quota") and treat step 4 as the only
+  net left.
+- No `gh`, no network, or a repo with no bots: degrade with a warning — never invent a reviewer.
+
+`onboard` records this list in the repo conventions; here you confirm it still holds.
+
 ## Step 1.5 — Devserver validation (bigger change / touches UI)
 
 A headless test can pass while the screen is broken. For a **bigger change, or one touching UI or a
@@ -105,7 +124,9 @@ this gate exists to catch**: if any step came out red or could not be executed, 
 it, or leave the decision to proceed explicit (human) and record it.
 
 With the stamp: open/update the PR, linked to the issue with `Closes #N` in the body, with the
-standard description and the evidence from the checks. CI and the quality gate should come out green
+standard description and the evidence from the checks. **The gate blocks a PR that references no
+issue** (not in the body, not in the branch): that reference is the only thread tying PR to issue —
+without it, cost, lead time and adoption stop being measurable. CI and the quality gate should come out green
 first try — because we already guaranteed it here.
 
 **Record the dev cost on the issue** as soon as the PR opens (`cost`): run `session-cost.py` and post
@@ -118,5 +139,10 @@ have and say so — do not invent.
 with an open PR, and the cost is part of the milestone: cost first, label second. The agent **acts
 and reports it in the summary** (cost included); it does not ask first.
 
+**After it opens, CI is the final judge.** The gate looks again at the `in review` milestone and
+**blocks the label while a check is failing** — fix it in the same PR. If CI caught what step 1 did
+not, the command that was missing goes into that repo's conventions.
+
 > If an automated reviewer flags something afterwards, that is a **preflight defect**: fold the rule
-> that slipped through into the checklist so it does not happen twice.
+> that slipped through into the checklist so it does not happen twice. If the reviewer flagged
+> nothing **because it is mute**, do not count that as a win — record it in the summary.
