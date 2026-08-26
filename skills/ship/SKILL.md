@@ -48,9 +48,11 @@ standards) and `context` (the target app). If the problem or solution is not cle
    a PR without passing here.
 7. **Open the PR** — `gh pr create` with `Closes #N` in the body, a standard title/description and
    the DoD checklist. Record the dev cost on the issue (`cost`) — it is part of this milestone.
-8. **Confirm the gate** — CI and the quality gate green on new code, first try (because preflight
-   already guaranteed it). Only then recommend the merge (P3), and label the issue
-   `status:in-review`.
+8. **Confirm the gate** — CI **green** on the PR (`gh pr checks`) and the quality gate green on new
+   code, first try (because preflight already guaranteed it). A red check blocks the `in review`
+   milestone: fix it in the same PR. If this repo's automated reviewers are mute
+   (`preflight/scripts/pr-bots.sh`), say so when recommending the merge (P3) — green with no reviewer
+   is an absence of signal, not an approval. Only then label the issue `status:in-review`.
 
 ## After the merge — to staging and production
 

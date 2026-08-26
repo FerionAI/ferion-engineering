@@ -39,7 +39,9 @@ signatures, P3) and issue transitions), `.mcp.json`, `config/team-config.example
 
 **Enforced mandatory flow (`hooks/flow-gate.sh`):** state per repo in `.git/ferion-flow` and gates
 that **block (exit 2)** an out-of-order step — editing code without an assumed issue, opening a PR
-without local review (`stamp review` from `preflight`), labelling for review without PR + cost.
+without local review (`stamp review` from `preflight`) **or without an issue reference**, labelling for
+review without PR + cost **or with a red CI check** (it reads `gh pr checks` from the URL kept in the
+`pr` milestone; with no `gh` it degrades instead of blocking).
 `PostToolUse` stamps the milestones from what the tool actually did; the only exception is
 `bypass "<reason>"` (recorded and declared in the summary). The state also holds each issue's cost
 `baseline`, so `cost` measures **per issue, not per session**. Mechanics:

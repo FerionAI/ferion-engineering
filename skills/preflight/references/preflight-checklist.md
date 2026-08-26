@@ -8,7 +8,9 @@ Each block points at the skill that owns the rule (for the detail).
 - [ ] **The issue's state matrix is covered** — each domain state (unpublished, expired, private, unconfigured, empty) has verified behavior, not just the happy path. State matrix missing from the issue: fill it in before opening the PR (`epic/references/issue-template.md`).
 - [ ] **Issue that already failed QA once:** fix the rule (name the invariant) + sweep the siblings with `grep` + a test that fails before the fix — patching only the reported case is forbidden from the second round onward (`qa/references/verify-and-gate.md`).
 - [ ] No extra scope beyond what was asked (YAGNI); no dead or duplicated code.
-- [ ] PR linked to the issue with `Closes #N`; standard description with the DoD checklist.
+- [ ] PR linked to the issue with `Closes #N`; standard description with the DoD checklist. The gate blocks a PR with no issue reference in the body or the branch.
+- [ ] **Automated reviewers of this repo checked** (`preflight/scripts/pr-bots.sh`): the ALIVE ones are anticipated in the checklist; if any is MUTE (quota/subscription), that goes in the delivery summary.
+- [ ] **CI green on the PR before labelling for review** (`gh pr checks`) — a failing check blocks the `in review` milestone.
 
 ## Tests and build (P2/P3, `context`)
 - [ ] Build and typecheck with no errors.

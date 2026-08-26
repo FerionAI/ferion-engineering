@@ -18,6 +18,8 @@ check() { # <expected> <got> <description>
 edit_repo='{"tool_name":"Edit","tool_input":{"file_path":"'"$T"'/src/a.ts"}}'
 edit_out='{"tool_name":"Edit","tool_input":{"file_path":"/tmp/scratch/a.ts"}}'
 pr_cmd='{"tool_name":"Bash","tool_input":{"command":"gh pr create --fill"}}'
+pr_link='{"tool_name":"Bash","tool_input":{"command":"gh pr create --body \"Closes #42\""}}'
+pr_done='{"tool_name":"Bash","tool_input":{"command":"gh pr create --body \"Closes #42\""},"tool_response":{"stdout":"https://github.com/acme/app/pull/77"}}'
 ls_cmd='{"tool_name":"Bash","tool_input":{"command":"ls -la"}}'
 sed_cmd='{"tool_name":"Bash","tool_input":{"command":"sed -i s/a/b/ src/a.ts"}}'
 tmp_cmd='{"tool_name":"Bash","tool_input":{"command":"grep -r foo src/ > /tmp/o.txt"}}'
@@ -43,15 +45,17 @@ g post issue "$assume" >/dev/null
 check 0 "$(g gate edit "$edit_repo")"      "with the issue assumed, editing passes"
 check 0 "$(g gate bash-edit "$sed_cmd")"   "with the issue assumed, sed -i passes"
 
-# 4) The PR requires the local review
-check 2 "$(g gate pr "$pr_cmd")"           "a PR without local review is blocked"
+# 4) The PR requires the local review AND a reference to the issue
+check 2 "$(g gate pr "$pr_link")"          "a PR without local review is blocked"
 s stamp review
-check 0 "$(g gate pr "$pr_cmd")"           "a PR with local review passes"
+check 2 "$(g gate pr "$pr_cmd")"           "a PR that references no issue is blocked"
+check 0 "$(g gate pr "$pr_link")"          "a PR with local review and a Closes #N passes"
 
 # 5) Labelling for review requires PR + cost
 check 2 "$(g gate review-label "$to_review")"   "review label without PR/cost is blocked"
 check 0 "$(g gate review-label "$other_issue")" "labelling ANOTHER issue is not this flow"
-g post issue "$pr_cmd" >/dev/null
+g post issue "$pr_done" >/dev/null
+check "https://github.com/acme/app/pull/77" "$(sed -n 's/^pr=//p' "$T/.git/ferion-flow" | tail -1)" "the PR milestone keeps the URL (to check its CI later)"
 check 2 "$(g gate review-label "$to_review")"   "review label without cost is still blocked"
 g post issue "$cost_cmd" >/dev/null
 check 0 "$(g gate review-label "$to_review")"   "review label with PR and cost passes"
@@ -75,4 +79,4 @@ s stamp task 45
 check 0 "$(grep -c '2000-01-01T00:00:00Z' "$T/.git/ferion-flow")" "a new issue clears the previous baseline"
 
 rm -rf "$T"
-[ "$fails" -eq 0 ] && echo "OK flow-gate: 21 cases" || { echo "x flow-gate: $fails failure(s)"; exit 1; }
+[ "$fails" -eq 0 ] && echo "OK flow-gate: 24 cases" || { echo "x flow-gate: $fails failure(s)"; exit 1; }

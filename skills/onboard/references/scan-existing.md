@@ -50,6 +50,17 @@ Mark each axis present/absent:
   `docker-compose*`, k8s manifests.
 - **Secrets:** `Grep` for hardcoded credential patterns (flag it, never print the value).
 
+## 2.5 Automated reviewers of the repo (who comments on PRs)
+
+Do not assume a static-analysis vendor. Run
+`bash ${CLAUDE_PLUGIN_ROOT}/skills/preflight/scripts/pr-bots.sh <owner/repo>` and record the result in
+`docs/context/conventions.md` under **Automated reviewers**: one per line, with state (ALIVE/MUTE) and
+the date it was checked. That list is what `preflight` anticipates — and it is what exposes a paid
+reviewer that has been posting quota notices for weeks.
+
+Repo with no bots at all: record "no automated reviewer" — it changes the weight of preflight step 4
+(the adversarial pass becomes the only net).
+
 ## 3. Domain map (cheap)
 
 - List apps/services by topology: a folder with its own manifest is a unit.

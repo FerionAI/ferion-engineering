@@ -43,6 +43,9 @@ becomes a conversation ("17%, it was 9% — it rose after release X").
 | **Security** | Open vulnerabilities, hotspots to review | static analysis + dependency scanning |
 | **Cost & efficiency** | Capture coverage, median USD/tokens/hours per issue, cost by type and by epic | the `ferion:cost` comments on the issues (`references/cost-report.md`) |
 | **Process effectiveness** | ⭐ Bot findings **after preflight** (target 0) · preflight green first try | static analysis + GitHub (reviews/bots) + CI |
+| **Process effectiveness** | ⭐ **Did the automated reviewer actually answer?** (alive bot vs mute on quota/subscription) | `preflight/scripts/pr-bots.sh` (GitHub) |
+| **Process effectiveness** | PRs merged with a red check · PRs with no check at all | GitHub (check-runs) |
+| **Process effectiveness** | Traceability: % of PRs referencing their issue (body or branch) | GitHub (PR bodies) |
 | **Process effectiveness** | Pipeline adoption (% of PRs through `ship`/`preflight`) | GitHub (PR pattern/checklist) |
 | **Process effectiveness** | Usage per skill · edit acceptance rate | Claude Code analytics / OTel |
 
@@ -61,6 +64,16 @@ aggregation in `references/cost-report.md`:
 - **One reading sentence per tile:** what is expensive, what changed vs the previous period, what to
   do about it.
 - **By issue/type/team, never by person** (P8: measure to decide, not to punish). No PII.
+- **Publish the capture-gap query every week**, not only when someone asks — the block ships with the
+  list of issues delivered without a cost comment (query in `cost/references/capture.md`). Low coverage
+  is the action of the week, not a footnote.
+- **Two alerts a number alone will not give you:**
+  **(a) closed-as-not-planned issues carrying a cost** — money that turned into nothing; list them one
+  by one. **(b) concentration by type** — how much of the spend went to routine/rework labels rather
+  than product value.
+- **Distrust absurd dispersion:** tokens per active hour varying more than ~3× across issues is a sign
+  of broken measurement, not of an inconsistent team (that is how session-wide cost attribution was
+  found).
 
 ## Process effectiveness (continuous improvement)
 
@@ -70,6 +83,15 @@ closes the loop:
 - **⭐ Automated findings AFTER preflight (target: 0).** This is preflight's central promise: no bot or
   reviewer finds what the machine should have caught. Each case = a **new rule in the preflight
   checklist**. The single most important metric to track, and the one that validates the core.
+- **⭐ Zero for the right reason.** Before celebrating the zero above, run
+  `preflight/scripts/pr-bots.sh` and show **how many automated reviewers were alive**. A bot out of
+  quota or with a paused subscription posts a notice and goes quiet: the PR ships unreviewed while
+  looking approved, and the ⭐ metric reads zero from the absence of a reviewer, not from quality.
+  **Its own tile, next to the zero.**
+- **Merged with a red CI:** % of PRs merged with a failing check (and % with no check at all). The gate
+  blocks the `in review` milestone on a red CI; this metric shows what went around it.
+- **Issue↔PR traceability:** % of PRs referencing their issue. Everything measured per issue rests on
+  it — when it drops, cost and lead time per issue stop existing before anything else does.
 - **Pipeline adoption:** % of PRs that went through `ship`/`preflight` (vs deliveries outside the flow).
 - **Usage per skill** and **edit acceptance rate:** from the Claude Code analytics dashboard or OTel
   telemetry. It shows which skills help and which nobody uses.
