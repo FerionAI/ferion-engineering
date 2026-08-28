@@ -48,6 +48,8 @@ jobs:
         run: pip install pyyaml
       - name: Validate the release contents (the gate that replaces the human merge)
         if: steps.find.outputs.number != ''
+        env:
+          LEAK_PATTERNS: ${{ secrets.LEAK_PATTERNS }}
         run: sh scripts/validate-plugin.sh
 
       - name: Merge the release PR
