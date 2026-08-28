@@ -31,6 +31,28 @@ becomes a conversation ("17%, it was 9% — it rose after release X").
 - **The summary prioritizes what changed**, not what has been bad for months: "Where to look first"
   opens with the largest variations (for worse and for better — what improved explains what worked).
 
+## Rule #2 — a color is not a finding
+
+Green and red summarize a claim; they are not the claim. Every status ships with what produced it
+and whether it deserves to be believed.
+
+- **Name what failed.** "Quality gate: failed" is a pixel. "Quality gate: failed — 34 new issues, 31
+  of them one rule firing on the word `todo`, which is ordinary Portuguese and not the English TODO
+  tag" is something a person can act on.
+- **A signal that is always red carries no information.** When the same condition fails week after
+  week for the same reason, the finding is about the **check**, not about the code: it is
+  miscalibrated and the team has already learned to scroll past it. Report that metric as
+  **not measuring** — not as "bad" — and put the configuration fix in "Where to look first", with an
+  owner.
+- **Separate "the code failed" from "the check failed".** A red build from a flaky runner, an expired
+  token, or a rule that does not fit the language is an **infrastructure** finding, not a quality
+  one. Filed together, they teach people to ignore both.
+- **Report the gate net of known false positives, and show both numbers:** `failed (34) · 3 once the
+  triaged false positives are discounted`. The raw number keeps you honest; the net number is the one
+  that means something. How to triage them: `quality/references/static-analysis.md`.
+- **If you cannot say what a number means, it does not go on the dashboard.** Two sentences of
+  reading beat ten tiles nobody trusts.
+
 ## Where each metric comes from
 
 | Block | Metric | Source |
@@ -102,18 +124,26 @@ closes the loop:
 
 ## How to generate it
 
-1. **Collect** the metrics from the available sources (start with the MCPs already connected in this
-   session; the rest per `integrations/references/mcp-catalog.md`). Mark anything absent as "pending
-   connection". **Collect both windows** — the current week and the previous one — in the same pass;
-   for state metrics, open last week's dashboard and take the values from there.
-2. **Compare against the targets** (`quality/references/metrics.md`): good/attention/bad band — and
+1. **Connect first, and ask before you write anything.** Call every source for real — one cheap
+   query per MCP, not an inference from the session's tool list (`integrations/references/mcp-catalog.md`).
+   A source you never called is not "unavailable": it is unchecked, and reporting it as missing is a
+   guess. If something does not answer, **stop here and ask**, naming the source and the error: "the
+   observability MCP is not responding — reconnect it, or should I issue the dashboard without change
+   failure rate and MTTR?" Finding this out at the end costs the whole report and the person has to
+   ask for it a second time. Only what actually failed this call is marked **pending connection**.
+2. **Collect** the metrics from the sources that answered. **Collect both windows** — the current week
+   and the previous one — in the same pass; for state metrics, open last week's dashboard and take the
+   values from there.
+3. **Compare against the targets** (`quality/references/metrics.md`): good/attention/bad band — and
    against the previous week: each metric ships as `current · was X · Δ` with the
-   improved/worsened/stable mark.
-3. **Build the HTML** from `references/dashboard-template.html` — replace the example data with the
+   improved/worsened/stable mark. **Then read the band** (Rule #2): for anything outside good, open
+   what produced it before painting it red, and check whether the same reason produced it last week
+   too.
+4. **Build the HTML** from `references/dashboard-template.html` — replace the example data with the
    real values and adjust the status colors to the targets.
-4. **Deliver** it as a file (and, if it is recurring, offer to schedule a weekly task that regenerates
+5. **Deliver** it as a file (and, if it is recurring, offer to schedule a weekly task that regenerates
    and sends it).
-5. **Not just numbers:** add 2–3 actionable readings anchored in the **variation** ("change failure
+6. **Not just numbers:** add 2–3 actionable readings anchored in the **variation** ("change failure
    rate 9% → 17% after release X → review the canary") — a metric is a conversation, not a scoreboard.
 
 ## Recurrence
