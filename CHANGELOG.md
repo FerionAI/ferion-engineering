@@ -4,6 +4,17 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1](https://github.com/FerionAI/ferion-engineering/compare/ferion-engineering-v0.2.0...ferion-engineering-v0.2.1) (2026-08-28)
+
+
+### Bug Fixes
+
+* **health:** read the signal instead of painting it, and connect before giving up ([6a36b4a](https://github.com/FerionAI/ferion-engineering/commit/6a36b4a35c8fe5adf1699d354b498fc6503b5049))
+* **health:** read the signal instead of painting it, and connect before giving up ([d1a3829](https://github.com/FerionAI/ferion-engineering/commit/d1a382928729a905f2ed89682fbf4e2c5fc90ee3)), closes [#5](https://github.com/FerionAI/ferion-engineering/issues/5)
+* **release:** put the version stamp on the marker line in CLAUDE.md ([7b5078c](https://github.com/FerionAI/ferion-engineering/commit/7b5078c205a0265a57775eb4b2727e7359b6be4b)), closes [#3](https://github.com/FerionAI/ferion-engineering/issues/3)
+* **security:** stop check-leaks from publishing the terms it hides ([a89c927](https://github.com/FerionAI/ferion-engineering/commit/a89c927f4d09592ba26e1886ca6157d8486b0ee7)), closes [#2](https://github.com/FerionAI/ferion-engineering/issues/2)
+* stop the leak detector from publishing what it hides, and fix the CLAUDE.md version stamp ([9bb2584](https://github.com/FerionAI/ferion-engineering/commit/9bb2584899f8b611ca2720359590b62bdc7ccdf4))
+
 ## [0.2.0](https://github.com/FerionAI/ferion-engineering/compare/ferion-engineering-v0.1.0...ferion-engineering-v0.2.0) (2026-08-26)
 
 
