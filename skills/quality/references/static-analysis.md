@@ -29,6 +29,15 @@ up from today.
   `preflight/references/anti-hallucination.md` is the counter-check.
 - **Complexity findings are usually right.** A function the analyzer calls too complex is the function
   the next person will misread at 3am.
+- **A rule that does not fit the language is a configuration bug, not a quality signal.** Tag rules
+  written for English (TODO/FIXME) fire on ordinary words in other languages — Portuguese and Spanish
+  `todo` ("all"), French `fin` — and then the gate fails on nearly every PR. When **one** rule
+  produces most of the findings, fix the rule (scope it, or exclude the pattern) and record why. Do
+  not triage the same false positive every week; that is a chore the tool invented for you.
+- **A gate that is red every week has stopped being a gate.** People route around a signal that never
+  changes, and then miss the one week it was real. Track how often it fails *for the same reason*:
+  past roughly half the runs, the thing to report is the misconfiguration, not the code — `health`
+  marks that metric **not measuring** rather than "bad".
 
 ## Wiring it up
 
