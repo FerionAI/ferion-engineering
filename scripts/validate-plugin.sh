@@ -109,6 +109,7 @@ if command -v python3 >/dev/null 2>&1; then
 fi
 
 # Nothing company-specific leaks into the public repo
+sh scripts/check-leaks.sh --selftest || exit 1
 sh scripts/check-leaks.sh || exit 1
 
 # The hook that blocks AI signatures on commits/PRs (P3) still works

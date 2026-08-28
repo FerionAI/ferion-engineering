@@ -15,4 +15,8 @@ jobs:
           python-version: "3.x"
       - run: pip install pyyaml
       - name: Validate plugin (JSON, frontmatter, refs, sync, version, leaks)
+        # The private term list lives in a repository secret, never in the repo. Unset (a fork,
+        # or a team that never had one), check-leaks still runs its generic half.
+        env:
+          LEAK_PATTERNS: ${{ secrets.LEAK_PATTERNS }}
         run: sh scripts/validate-plugin.sh
