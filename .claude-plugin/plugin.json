@@ -1,6 +1,6 @@
 {
   "name": "ferion-engineering",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "An opinionated engineering standard as a Claude Code plugin, driven by natural language — from idea to merge, for PM, QA and dev. GitHub Issues as the source of truth, a mandatory 6-step flow enforced by hooks that actually block out-of-order work, a hallucination-proof pre-PR gate (preflight), spec-driven development, a constitution with Definition of Ready/Done, QA kit, safe release + blameless incident response, quality and security (OWASP, WCAG, DORA), privacy (GDPR/LGPD/CCPA), design system adoption, design review, cost per task, MCP-first integrations, health dashboard and repo onboarding — consistent across Claude, Cursor and Gemini/Codex.",
   "author": {
     "name": "FerionAI"

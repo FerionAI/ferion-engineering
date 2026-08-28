@@ -6,7 +6,7 @@
 ## What this repository is
 The **source of truth of an engineering standard** — a Claude Code plugin plus a portable core
 (`AGENTS.md` + `memory/constitution.md`) for Cursor/Gemini/Codex.
-**Current version: 0.2.0, 25 skills.** <!-- x-release-please-version -->
+**Current version: 0.2.1, 25 skills.** <!-- x-release-please-version -->
 Covers the full cycle (idea to merge) for PM, QA and dev.
 
 > Careful: **this repo IS the standard/plugin**, not a product app. When editing it, follow
