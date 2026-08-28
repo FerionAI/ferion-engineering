@@ -118,6 +118,9 @@ sh hooks/no-ai-signature.test.sh || exit 1
 # no hole, no false block
 sh hooks/flow-gate.test.sh || exit 1
 
+# The source gate: what it calls configured, missing, or impossible to check from a shell
+bash hooks/check-sources.sh --selftest || exit 1
+
 # The session cost calculation the `cost` skill writes back to the issue
 python3 skills/cost/scripts/session-cost.py --selftest || exit 1
 bash skills/preflight/scripts/pr-bots.sh --selftest || exit 1

@@ -54,3 +54,10 @@ actually uses it — an unconfigured tool degrades with a warning, it never bloc
   (`quality/references/secrets.md`).
 - **Reuse before integrating again:** if a client or wrapper for the tool already exists in the
   codebase, use it.
+- **A source that is not configured is a blocked skill, not a footnote.** `hooks/check-sources.sh`
+  reads the credentials each MCP server in `.mcp.json` declares and, at session start, names the ones
+  nobody set. A skill that reads from them (today: `health`) is **blocked** rather than allowed to
+  ship a report full of holes — the person reconnects once instead of asking for the whole thing
+  twice. Servers that authenticate in a browser (OAuth) cannot be checked from a hook: it says so
+  instead of pretending, and `/mcp` is the confirmation. Declaring a server in `.mcp.json` is what
+  puts it under this check — nothing else to maintain.
