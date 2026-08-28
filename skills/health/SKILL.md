@@ -53,6 +53,27 @@ and whether it deserves to be believed.
 - **If you cannot say what a number means, it does not go on the dashboard.** Two sentences of
   reading beat ten tiles nobody trusts.
 
+## Rule #3 — the scope is declared, never inferred
+
+A dashboard measures a **named scope**: the repositories belonging to one team, one product, one
+area. Never "everything I can reach" — a report spanning dozens of repositories is a list, not a
+picture, and nobody owns it.
+
+- **Never infer the scope from what happens to be open** in the editor or the session. Rule #1 lives
+  or dies on this: `current · was X · Δ` means something only when both runs measured the *same* set.
+  A scope that drifts week to week turns every Δ into noise — and the weekly pulse runs on a
+  schedule, with no editor open at all.
+- **Ask when it is not given.** The scopes the team declared are the options; if the repository you
+  are in belongs to one, propose that one. Always one question — never a silent default of "all of
+  them".
+- **Stamp the scope in the dashboard**, next to the date. Last week's HTML is where the previous
+  values of the state metrics come from, so a dashboard compares only against one of the *same*
+  scope. When it differs, write **"no basis — the scope changed"** instead of showing a Δ between two
+  different populations.
+- **Aggregate, then name the outliers.** A scope of 15 repositories is not 15 sections: it is the
+  scope's numbers, with the repositories that left the band named. A repository that never leaves the
+  band belongs in the total and nowhere else.
+
 ## Where each metric comes from
 
 | Block | Metric | Source |
@@ -124,38 +145,45 @@ closes the loop:
 
 ## How to generate it
 
-1. **Connect first, and ask before you write anything.** Call every source for real — one cheap
+1. **Settle the scope (Rule #3).** Which named scope is this dashboard about? Not given and the
+   current repository does not clearly belong to one — **ask**. Never fall back to everything
+   reachable.
+2. **Connect first, and ask before you write anything.** Call every source for real — one cheap
    query per MCP, not an inference from the session's tool list (`integrations/references/mcp-catalog.md`).
    A source you never called is not "unavailable": it is unchecked, and reporting it as missing is a
    guess. If something does not answer, **stop here and ask**, naming the source and the error: "the
    observability MCP is not responding — reconnect it, or should I issue the dashboard without change
    failure rate and MTTR?" Finding this out at the end costs the whole report and the person has to
    ask for it a second time. Only what actually failed this call is marked **pending connection**.
-2. **Collect** the metrics from the sources that answered. **Collect both windows** — the current week
+3. **Collect** the metrics from the sources that answered. **Collect both windows** — the current week
    and the previous one — in the same pass; for state metrics, open last week's dashboard and take the
    values from there.
-3. **Compare against the targets** (`quality/references/metrics.md`): good/attention/bad band — and
+4. **Compare against the targets** (`quality/references/metrics.md`): good/attention/bad band — and
    against the previous week: each metric ships as `current · was X · Δ` with the
    improved/worsened/stable mark. **Then read the band** (Rule #2): for anything outside good, open
    what produced it before painting it red, and check whether the same reason produced it last week
    too.
-4. **Build the HTML** from `references/dashboard-template.html` — replace the example data with the
-   real values and adjust the status colors to the targets.
-5. **Deliver** it as a file (and, if it is recurring, offer to schedule a weekly task that regenerates
+5. **Build the HTML** from `references/dashboard-template.html` — replace the example data with the
+   real values and adjust the status colors to the targets. **Stamp the scope** next to the date, and
+   compare only against a previous dashboard of the same scope.
+6. **Deliver** it as a file (and, if it is recurring, offer to schedule a weekly task that regenerates
    and sends it).
-6. **Not just numbers:** add 2–3 actionable readings anchored in the **variation** ("change failure
+7. **Not just numbers:** add 2–3 actionable readings anchored in the **variation** ("change failure
    rate 9% → 17% after release X → review the canary") — a metric is a conversation, not a scoreboard.
 
 ## Recurrence
 
-Offer to schedule a "weekly pulse" that regenerates the dashboard and highlights what changed.
+Offer to schedule a "weekly pulse" that regenerates the dashboard and highlights what changed. **Pin
+the scope when you schedule it** — a run on a schedule has no session and no editor to infer one
+from, so a pulse without a declared scope has no defined subject.
 **Keep the previous dashboard** (a file or an artifact): it is where the previous values of the state
 metrics come from — without it, the next issue loses half its comparison.
 
 ## Output
 
-An updated HTML dashboard with DORA / Quality / Observability / UX / Security / **Cost & efficiency**
-/ **Process effectiveness** blocks, **each metric with its status vs target and vs the previous week**
+An updated HTML dashboard **stamped with its scope and date**, with DORA / Quality / Observability /
+UX / Security / **Cost & efficiency** / **Process effectiveness** blocks, **each metric with its
+status vs target and vs the previous week**
 (current · was X · Δ), and a short summary of what to look at first, opened by the largest variations —
 including the **post-preflight findings** (the signal that triggers improving the standard) and the
 **cost capture coverage** (without it, the cost block is a sample).

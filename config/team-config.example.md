@@ -43,6 +43,23 @@ No custom fields, no extra system.
 - **Marker:** `<!-- ferion:cost ... -->` — what makes the comment machine-readable for `health`.
 - `<FILL: does your team price features from this? which model prices do you assume?>`
 
+## Dashboard scopes (`health`)
+
+A scope is the slice a dashboard measures. It has to stay **stable between weeks** — that is what
+makes the week-over-week Δ mean anything — so it is declared here and never inferred from whatever
+happens to be open.
+
+| Scope | Covers |
+|---|---|
+| `<FILL: platform>` | `<FILL: the repositories, or the team/label that identifies them>` |
+| `<FILL: growth>` | `<FILL: ...>` |
+
+- One scope per team, product or area — the unit someone actually owns.
+- Asked for a dashboard with no scope? The skill asks which one; it never falls back to every
+  repository it can reach.
+- Changing what a scope covers breaks its comparison with earlier dashboards. Say so in the next
+  issue instead of showing a Δ between two different populations.
+
 ## Stack and commands (per repository)
 
 `onboard` fills this in from the code. One block per repository.
