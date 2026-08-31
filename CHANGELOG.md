@@ -4,6 +4,18 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0](https://github.com/FerionAI/ferion-engineering/compare/ferion-engineering-v0.2.1...ferion-engineering-v0.3.0) (2026-08-31)
+
+
+### Features
+
+* **integrations:** say a source is unconfigured before the report, not during it ([aed53df](https://github.com/FerionAI/ferion-engineering/commit/aed53df7b32f5320eaf8bab815433dd549b816f0))
+
+
+### Bug Fixes
+
+* **health:** measure a declared scope, and ask when nobody named one ([71bb2d7](https://github.com/FerionAI/ferion-engineering/commit/71bb2d75b42dcce16fdaf51b57c22b3549a08dc9))
+
 ## [0.2.1](https://github.com/FerionAI/ferion-engineering/compare/ferion-engineering-v0.2.0...ferion-engineering-v0.2.1) (2026-08-28)
 
 
