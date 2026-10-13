@@ -82,6 +82,11 @@ registered (`tl`, skill `approve`) without the PR approved by a human + CI green
 - **Ship the shape, never the values.** Anything team-specific is a `<FILL: ...>` placeholder or
   lives in `config/team-config.md` (git-ignored). `scripts/check-leaks.sh` enforces it in CI.
 - Design system adoption is **progressive** — it never blocks a deploy.
+- **A scenario is code, test data is created.** The `scenarios/*.yaml` catalog is the artifact PM,
+  QA and dev share; `qa-spec` **refuses** to generate a test without the trait's factory
+  (`test-data`) — shipping automation before the factories would produce debt at scale, generated
+  by AI. The mutation proof is the test's gate; `preflight/scripts/qa-lint.sh` blocks preexisting
+  data and fixed waits (without a lint, they stay a recommendation).
 - Write less code, MCP-first, everything actionable in natural language.
 
 ## Where the rest is

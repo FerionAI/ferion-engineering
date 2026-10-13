@@ -4,7 +4,7 @@
 > Playbooks are the detail (`references/`) each skill loads on demand (progressive
 > disclosure, P8). The SKILL.md is the entry point; the "how" lives here.
 
-**87 playbooks** across **25** skills.
+**88 playbooks** across **25** skills.
 
 ## agentic-flow (5)
 
@@ -95,11 +95,12 @@
 - [`references/scaffold-new.md`](skills/onboard/references/scaffold-new.md) — Scaffolding blueprint — New mode
 - [`references/scan-existing.md`](skills/onboard/references/scan-existing.md) — Scan script — Existing mode
 
-## preflight (4)
+## preflight (5)
 
 - [`references/anti-hallucination.md`](skills/preflight/references/anti-hallucination.md) — Anti-hallucination — verify that it actually exists
 - [`references/contract-testing.md`](skills/preflight/references/contract-testing.md) — Contract testing before the PR — what CI does not do
 - [`references/devserver-validation.md`](skills/preflight/references/devserver-validation.md) — Devserver validation — the live app before the PR
+- [`references/flaky-triage.md`](skills/preflight/references/flaky-triage.md) — Playbook — Triage of an unstable (flaky) test
 - [`references/preflight-checklist.md`](skills/preflight/references/preflight-checklist.md) — Full pre-PR checklist
 
 ## privacy (1)
