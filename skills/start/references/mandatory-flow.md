@@ -31,9 +31,9 @@ only decides which commands it suggests and how it reads CI — the MR's head pi
 
 | Trigger | Requires | Blocks when |
 |---|---|---|
-| `Write`/`Edit`/`MultiEdit`/`NotebookEdit` on a repo file | step 2 | code with no assumed issue |
+| `Write`/`Edit`/`MultiEdit`/`NotebookEdit` on a repo file | step 2 | code with no assumed issue · another group's code **in the same session** (an unlinked issue needs a new session, § Batch) |
 | `Bash` that writes into the repo (`>`, `>>`, `sed -i`, `tee`, `git apply`, `patch`) | step 2 | the same thing, through the back door |
-| `gh pr create` / `glab mr create` / the MCP equivalent | step 4 | a PR without the local review closed · a PR **that misses an issue** (of the group) in the title/body and the branch |
+| `gh pr create` / `glab mr create` / the MCP equivalent | steps 3+4 | a PR without the local review closed · a PR **with no spec**: no file under `specs/` changed on the branch since `main` (no remote: no block) · a PR **that misses an issue** (of the group) in the title/body and the branch |
 | labelling `status:in-review` (with step 2 done **on that issue**) | steps 4+5 | moving to review without the PR **and** the cost **of that issue** · labelling with a **red CI check** on the PR (the hook reads `gh pr checks` or the MR's head pipeline via `glab`; with no CLI/no network it does not block) |
 
 Outside a git repository, and for files outside the repo root (scratch, `/tmp`), **nothing is
@@ -85,9 +85,12 @@ Group mechanics:
   the group without losing a milestone. The diff grew past P3 midway: say so and propose splitting
   before the PR.
 
-Unlinked issues of the same batch go one at a time: once one is labelled `in review`, the next starts
-without asking again (the batch scope was already confirmed). To run them in parallel, use one
-session per worktree, since each worktree has its own flow state.
+Unlinked issues of the same batch go one at a time, **each in a new session**. The previous issue's
+context makes every call of the next one dearer (cost ≈ calls × context), so the gate blocks editing
+another group's code in the same session. Once one is labelled `in review`: assume the next and ask
+for `/clear` with the sentence ready to paste ("continue the batch: #7, #8, #9"). The state lives in
+the repo and the new session resumes from there. To run them in parallel, use one session per
+worktree, since each worktree has its own flow state.
 
 ## Exceptions — the only honest way out of the flow
 

@@ -165,5 +165,30 @@ check 1 "$(cd "$T" && bash "$H" reset >/dev/null 2>&1; printf '%s' "$edit_repo" 
 (cd "$T" && git config --unset ferion.forge)   # back to GitHub for the sections below
 rm -rf "$L"
 
+# 9) One session, one group: an unlinked issue needs a new session (the previous context makes everything dearer)
+ed() { printf '{"session_id":"%s","tool_name":"Edit","tool_input":{"file_path":"%s/src/a.ts"}}' "$1" "$T"; }
+sh_ed='{"session_id":"S1","tool_name":"Bash","tool_input":{"command":"sed -i s/a/b/ src/a.ts"}}'
+s reset; s stamp task 60; s stamp dev
+check 0 "$(g gate edit "$(ed S1)")"             "the session's first issue edits"
+s stamp task 61; s stamp dev
+check 2 "$(g gate edit "$(ed S1)")"             "same session, unlinked issue: blocked"
+check 2 "$(g gate bash-edit "$sh_ed")"          "the same through the shell"
+check 0 "$(g gate edit "$edit_repo")"           "no session id (another tool): no comparison"
+check 0 "$(g gate edit "$(ed S2)")"             "a new session releases the new issue"
+s stamp task 61 62
+check 0 "$(g gate edit "$(ed S2)")"             "extending the group in the same session passes"
+s reset; s stamp task 63; s stamp dev
+check 2 "$(g gate edit "$(ed S2)")"             "reset is not a way around the session gate"
+
+# 10) The PR needs a spec on the branch (the proof is git, not the conversation)
+gc() { (cd "$T" && git -c user.email=t@t -c user.name=t "$@" >/dev/null 2>&1); }
+pr70='{"tool_name":"Bash","tool_input":{"command":"gh pr create --body \"Closes #70\""}}'
+gc commit --allow-empty -m base; (cd "$T" && git update-ref refs/remotes/origin/main HEAD)
+mkdir -p "$T/src" "$T/specs/001"; echo a >"$T/src/a.ts"; gc add src; gc commit -m code
+s reset; s stamp task 70; s stamp dev; s stamp review
+check 2 "$(g gate pr "$pr70")"                  "a PR with no spec on the branch is blocked"
+echo s >"$T/specs/001/spec.md"; gc add specs; gc commit -m spec
+check 0 "$(g gate pr "$pr70")"                  "a PR with a spec on the branch passes"
+
 rm -rf "$T"
 [ "$fails" -eq 0 ] && echo "OK flow-gate: $total cases" || { echo "x flow-gate: $fails failure(s)"; exit 1; }

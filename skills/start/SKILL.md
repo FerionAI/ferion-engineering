@@ -42,9 +42,10 @@ instead of looking for another way around.
   a new session continues from the step it points to, without redoing what is already closed.
 - **One PR at a time, which may resolve several issues.** A batch of linked issues becomes a
   **group** (`stamp task <n> <n>…`). Strong signal: group and move on, saying so in one line. Weak
-  signal: explain the grouping and ask (criteria in `references/mandatory-flow.md` § Batch). A new
-  **unlinked** request mid-flow: finish, or record where you stopped — switching issues resets the
-  previous flow.
+  signal: explain the grouping and ask (criteria in `references/mandatory-flow.md` § Batch). An
+  **unlinked** issue goes to a **new session**: the gate blocks editing another group's code in the
+  same session, because the previous context makes every call dearer. Ask for `/clear` and say what
+  to paste ("continue #N").
 - **Exceptions only when recorded** (hotfix through `incident`, a repo with no issue tracker):
   `flow-gate.sh bypass "<reason>"` and **declare it in the summary**. Never stamp a step that did
   not happen.
@@ -68,7 +69,7 @@ any route that touches code enters the flow at step 1 (or wherever `status` says
 | "production is down", "error in production", "open an incident", "postmortem" | `incident` (response + postmortem; mitigate through `release`) |
 | "ship it / deploy", "put it in production", "canary/rollout", "rollback", "feature flag", "cut a release" | `release` (shipping to production safely) |
 | "is it ready for a PR?", "review everything before I push", "make sure it's spotless", "check it didn't hallucinate" | `preflight` (pre-PR gate) |
-| "review this", "is this ready to merge?", "look at my PR" | `review` (human review, after preflight) |
+| "review this", "is this ready to merge?", "look at my PR" | `review` (Definition of Done; in the pipeline it runs before preflight) |
 | "test cases", "test plan", "report a bug", "what to retest", "exploratory testing", "automate tests", "validate this issue", "can this go to production?" | `qa` (QA kit) |
 | "get me into this project", "I don't know this repo", "document what's here", "start a new project" | `onboard` |
 | "what's the standard", "how do we do it here", "what blocks a merge" | `constitution` |

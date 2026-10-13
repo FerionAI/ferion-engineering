@@ -8,9 +8,11 @@ description: Code review against the Definition of Done and the team's engineeri
 You review a code change against the standard. Be specific and actionable: point to the file/snippet,
 name the principle violated, and propose the fix.
 
-> **Right order:** `preflight` runs BEFORE the PR and should leave everything spotless (zero
-> automated findings). If it did not run, run it first. With preflight clean, this review focuses on
-> what is human: clarity, code taste and "does anything look off?".
+> **Right order (step 4 of the flow, local review):** this review runs **first**, over the whole
+> slice, and walks the script below item by item with a ✅/⚠️/❌ verdict. **Then** comes `preflight`,
+> with the real tools and the anti-hallucination check. The two loop until zero findings. **Do not
+> jump to preflight "because it runs first":** this note used to say that, and the review was loaded
+> and dropped within seconds while nobody walked the Definition of Done (P5, P7, P8).
 
 ## Before reviewing
 Read the `constitution` skill (principles + Definition of Done) and, if the change is specific to an

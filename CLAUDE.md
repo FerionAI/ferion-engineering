@@ -43,8 +43,9 @@ Infra: always-on hooks (`hooks/` — session banner + flow step, edit, commit/PR
 signatures, P3) and issue transitions), `.mcp.json`, `config/team-config.example.md`.
 
 **Enforced mandatory flow (`hooks/flow-gate.sh`):** state per repo in `.git/ferion-flow` and gates
-that **block (exit 2)** an out-of-order step — editing code without an assumed issue, opening a PR
-without local review (`stamp review` from `preflight`) **or without every issue's reference**, labelling for
+that **block (exit 2)** an out-of-order step — editing code without an assumed issue **or another group's
+in the same session**, opening a PR without local review (`stamp review` from `preflight`), **with no spec
+on the branch** **or without every issue's reference**, labelling for
 review without PR + cost (of that issue) **or with a red CI check** (it reads `gh pr checks` from the URL kept in the
 `pr` milestone; with no `gh` it degrades instead of blocking).
 `PostToolUse` stamps the milestones from what the tool actually did; the only exception is
@@ -67,6 +68,11 @@ review without PR + cost (of that issue) **or with a red CI check** (it reads `g
   per issue and the cost is split equally. The **signal strength** decides: strong (dependency, one
   will not compile without the other, same code, explicit ask) groups and says so; weak (same epic or
   theme) explains and asks. Different repos or a total well above 400 lines (P3) never group.
+- **The spec and the session became gates** (ADR-0008). The spec was the only step with no gate and
+  the one that leaked the most; a PR now needs a file under `specs/` changed on the branch. Sessions
+  that ran through several unlinked issues dragged their context into every call, so **one session
+  edits one group**: an unlinked issue asks for `/clear`. And `review` stopped telling the agent to run
+  `preflight` first — the contradiction that made it skip the Definition of Done.
 - **Ship the shape, never the values.** Anything team-specific is a `<FILL: ...>` placeholder or
   lives in `config/team-config.md` (git-ignored). `scripts/check-leaks.sh` enforces it in CI.
 - Design system adoption is **progressive** — it never blocks a deploy.

@@ -131,6 +131,27 @@ block() { # <title> <steps...>
 
 bypassed() { [ -n "$(get bypass)" ]; }
 
+fresh() { # a new issue = a new flow; the session is still the same one, so the session <-> group link survives
+  local s si; s=$(get session); si=$(get session_issues)
+  rm -f "$F"
+  [ -z "$s" ] || { put session "$s"; put session_issues "$si"; }
+}
+
+one_session_one_group() { # <payload>: a session that already edited one group's code does not start an unlinked one
+  local sid t si k linked=""
+  sid=$(val session_id "$1"); t=$(get task)
+  [ -n "$sid" ] && [ -n "$t" ] || return 0          # no session id (another tool) or no issue: nothing to compare
+  if [ "$(get session)" != "$sid" ]; then put session "$sid"; put session_issues "$t"; return 0; fi
+  si=$(get session_issues)
+  for k in $t; do has "$si" "$k" && linked=1; done
+  [ -n "$linked" ] || block \
+    "starting #${t// /, #} in the same session that already edited #${si// /, #} (unlinked issue)." \
+    "The previous issue's context rides along and makes every call of the new one more expensive (cost ≈ calls × context)." \
+    "Ask the person to open a new session (\`/clear\`) and paste \"continue #${t%% *}\" (plus the rest of the batch). The flow lives in the repo: the new session resumes from here." \
+    "Same delivery (dependency, same code)? Then it is a group: \`$self stamp task $si $t\` (criteria in \`start/references/mandatory-flow.md\` § Batch)."
+  for k in $t; do add session_issues "$k"; done
+}
+
 ci_red() { # <PR/MR ref> -> 0 when a check IS failing. No CLI / no auth / no checks: never blocks.
   local ref=$1 out
   [ -n "$ref" ] && [ "$ref" != "1" ] || return 1
@@ -156,7 +177,7 @@ case "$cmd" in
         [ $# -gt 0 ] || { echo "usage: $self stamp task <issue-number> [<issue-number>…]" >&2; exit 1; }
         # a new issue = a new flow (clears milestones and bypass); a group that includes the current issue extends it
         same=""; for k in "$@"; do has "$(get task)" "$k" && same=1; done
-        [ -n "$same" ] || rm -f "$F"
+        [ -n "$same" ] || fresh
         put task "$*"
         # cost baseline: from here on `cost` measures THIS issue only (a session may hold several).
         [ -n "$(get baseline)" ] || put baseline "$(date -u +%Y-%m-%dT%H:%M:%SZ)" ;;
@@ -174,7 +195,7 @@ case "$cmd" in
     [ -n "$arg" ] || { echo "usage: $self bypass \"<reason>\"" >&2; exit 1; }
     put bypass "$arg"; flow_status ;;
 
-  reset) rm -f "$F"; flow_status ;;
+  reset) fresh; flow_status ;;   # the session link stays: reset is not a way around the session gate
 
   gate)
     payload=$(cat)
@@ -190,6 +211,7 @@ case "$cmd" in
           "Go through \`spec-flow\` (specify->clarify->plan->tasks, which generates \`specs/<feature>/\`) — do not jump from the issue straight to code." \
           "Assume the issue: \`$C_ASSUME\` — the hook stamps the milestone by itself." \
           "Issue already assumed outside the agent? \`$self stamp task <n>\` and \`$self stamp dev\`."
+        bypassed || one_session_one_group "$payload"
         cat "$here/edit-reminder.md" ;;
 
       bash-edit)
@@ -209,7 +231,8 @@ case "$cmd" in
         bypassed || [ -n "$(get dev)" ] || block \
           "writing to a repo file (through the shell) before the \`in progress\` milestone." \
           "Same rule as the editor: issue (\`issues\`) -> spec-flow -> assume the issue and label it \`$L_PROG\`." \
-          "Issue already assumed outside the agent? \`$self stamp task <n>\` and \`$self stamp dev\`." ;;
+          "Issue already assumed outside the agent? \`$self stamp task <n>\` and \`$self stamp dev\`."
+        bypassed || one_session_one_group "$payload" ;;
 
       pr)
         cmdline=$(cmd_of "$payload")
@@ -227,7 +250,15 @@ case "$cmd" in
         [ -z "$none" ] || bypassed || block \
           "opening a $PR that does not reference${none} (not in the title/body, not in the branch)." \
           "Link every issue in the body: \`${C_PR}${t// /, closes #}\" …\` (or name the branch \`<type>/${t%% *}-<slug>\` and link the rest in the body)." \
-          "That reference is the only thread tying $PR to issue: without it, cost, lead time and pipeline adoption stop being measurable." ;;
+          "That reference is the only thread tying $PR to issue: without it, cost, lead time and pipeline adoption stop being measurable."
+        # Spec-driven was the rule from day one, yet the only step with no gate — and the one that leaked
+        # the most. The proof is the branch's git history, not the conversation. No remote = no base: no block.
+        base=$(git merge-base HEAD origin/HEAD 2>/dev/null || git merge-base HEAD origin/main 2>/dev/null ||
+               git merge-base HEAD origin/master 2>/dev/null)
+        [ -z "$base" ] || bypassed || git diff --name-only "$base" HEAD -- ':(glob)**/specs/**' | grep -q . || block \
+          "opening a $PR with no spec: no file under \`specs/\` changed on this branch." \
+          "Run \`spec-flow\`: a new feature generates \`specs/<feature>/\`; a bug fix **updates** the feature's existing spec. Commit it and repeat." \
+          "A change with no behaviour (dependency, config, docs)? \`$self bypass \"no spec: <reason>\"\` — and declare it in the summary." ;;
 
       review-label)
         cmdline=$(cmd_of "$payload")
