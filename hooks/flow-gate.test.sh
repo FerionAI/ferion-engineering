@@ -27,6 +27,11 @@ new_issue='{"tool_name":"Bash","tool_input":{"command":"gh issue create --title 
 assume='{"tool_name":"Bash","tool_input":{"command":"gh issue edit 42 --add-assignee @me --add-label status:in-progress"}}'
 to_review='{"tool_name":"Bash","tool_input":{"command":"gh issue edit 42 --add-label status:in-review"}}'
 other_issue='{"tool_name":"Bash","tool_input":{"command":"gh issue edit 99 --add-label status:in-review"}}'
+# Codex: edits arrive as apply_patch (paths in the patch headers), the shell may come as "cmd"
+cx_patch='{"tool_name":"apply_patch","tool_input":{"command":"*** Begin Patch\n*** Update File: src/a.ts\n@@\n-a\n+b\n*** End Patch"}}'
+cx_patch_out='{"tool_name":"apply_patch","tool_input":{"command":"*** Begin Patch\n*** Add File: /tmp/scratch/n.md\n+x\n*** End Patch"}}'
+cx_shell_patch='{"tool_name":"Bash","tool_input":{"command":"apply_patch \"*** Begin Patch\n*** Add File: docs/n.md\n+x\n*** End Patch\""}}'
+cx_cmd='{"tool_name":"Bash","tool_input":{"cmd":"sed -i s/a/b/ src/a.ts"}}'
 cost_cmd='{"tool_name":"Bash","tool_input":{"command":"gh issue comment 42 --body ferion:cost tokens=1403090 usd=2.05"}}'
 
 # 1) No issue: code is blocked, everything else passes
@@ -35,6 +40,10 @@ check 2 "$(g gate bash-edit "$sed_cmd")"   "sed -i without an issue is blocked"
 check 0 "$(g gate edit "$edit_out")"       "a file outside the repo is not blocked"
 check 0 "$(g gate bash-edit "$ls_cmd")"    "a read-only command is not blocked"
 check 0 "$(g gate bash-edit "$tmp_cmd")"   "writing to /tmp is not blocked"
+check 2 "$(g gate edit "$cx_patch")"       "Codex apply_patch on a repo file without an issue is blocked"
+check 0 "$(g gate edit "$cx_patch_out")"   "Codex apply_patch outside the repo is not blocked"
+check 2 "$(g gate bash-edit "$cx_shell_patch")" "apply_patch through the shell without an issue is blocked"
+check 2 "$(g gate bash-edit "$cx_cmd")"    "Codex exec \"cmd\" payload is read like \"command\""
 
 # 2) Creating the issue stamps step 1 — but code is still blocked until it is assumed
 g post issue "$new_issue" >/dev/null
@@ -44,6 +53,7 @@ check 2 "$(g gate edit "$edit_repo")"      "issue created but not assumed still 
 g post issue "$assume" >/dev/null
 check 0 "$(g gate edit "$edit_repo")"      "with the issue assumed, editing passes"
 check 0 "$(g gate bash-edit "$sed_cmd")"   "with the issue assumed, sed -i passes"
+check 0 "$(g gate edit "$cx_patch")"       "with the issue assumed, Codex apply_patch passes"
 
 # 4) The PR requires the local review AND a reference to the issue
 check 2 "$(g gate pr "$pr_link")"          "a PR without local review is blocked"
@@ -79,4 +89,4 @@ s stamp task 45
 check 0 "$(grep -c '2000-01-01T00:00:00Z' "$T/.git/ferion-flow")" "a new issue clears the previous baseline"
 
 rm -rf "$T"
-[ "$fails" -eq 0 ] && echo "OK flow-gate: 24 cases" || { echo "x flow-gate: $fails failure(s)"; exit 1; }
+[ "$fails" -eq 0 ] && echo "OK flow-gate: 29 cases" || { echo "x flow-gate: $fails failure(s)"; exit 1; }

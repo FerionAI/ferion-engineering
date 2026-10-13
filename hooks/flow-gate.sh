@@ -29,6 +29,19 @@ put() {
 val() { # pull "key": "value" out of the JSON payload (no jq dependency)
   grep -oE "\"$1\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" <<<"$2" | head -1 | sed -E 's/.*"([^"]*)"$/\1/'
 }
+cmd_of() { # the shell command of a Bash payload (Claude: "command"; Codex exec may send "cmd")
+  local c; c=$(val command "$1"); [ -n "$c" ] || c=$(val cmd "$1"); printf '%s' "$c"
+}
+patch_targets() { # Codex edits through apply_patch: the paths live in the patch headers, not in file_path
+  grep -oE '\*\*\* (Add File|Update File|Delete File|Move to): [^\\"]+' <<<"$1" | sed -E 's/^\*\*\* [A-Za-z ]+: //; s/[[:space:]]+$//'
+}
+in_repo() { # <paths, one per line> -> 0 when any of them is a repo file (relative = inside the repo)
+  local p
+  while IFS= read -r p; do
+    case "$p" in "") ;; "$root"/*) return 0 ;; /*) ;; *) return 0 ;; esac
+  done <<<"$1"
+  return 1
+}
 num_after() { # <regex prefix> <text> -> the first issue/PR number that follows it
   grep -oE "$1[[:space:]]+#?[0-9]+" <<<"$2" | head -1 | grep -oE '[0-9]+$'
 }
@@ -117,7 +130,8 @@ case "$cmd" in
     case "$arg" in
       edit)
         target=$(val file_path "$payload"); [ -n "$target" ] || target=$(val notebook_path "$payload")
-        case "$target" in "$root"/*) ;; *) exit 0 ;; esac   # file outside the repo (scratch/tmp): free
+        [ -n "$target" ] || target=$(patch_targets "$payload")
+        in_repo "$target" || exit 0                         # file outside the repo (scratch/tmp): free
         bypassed || [ -n "$(get dev)" ] || block \
           "editing code before the \`in progress\` milestone." \
           "Make sure the GitHub issue exists (skill \`issues\`): ask which one, or create it. Do not scan the backlog guessing." \
@@ -127,9 +141,10 @@ case "$cmd" in
         cat "$here/edit-reminder.md" ;;
 
       bash-edit)
-        cmdline=$(val command "$payload")
+        cmdline=$(cmd_of "$payload")
         [ -n "$cmdline" ] || exit 0
         writes=0
+        in_repo "$(patch_targets "$payload")" && writes=1   # apply_patch invoked through the shell
         grep -qE '(^|[|;&[:space:]])(sed[[:space:]]+-i|perl[[:space:]]+-i|dd[[:space:]]+of=|tee([[:space:]]|$)|patch([[:space:]]|$)|git[[:space:]]+apply)' <<<"$cmdline" && writes=1
         for target in $(grep -oE '>>?[[:space:]]*[^[:space:];&|)"'"'"']+' <<<"$cmdline" | sed -E 's/^>>?[[:space:]]*//'); do
           case "$target" in
@@ -145,7 +160,7 @@ case "$cmd" in
           "Issue already assumed outside the agent? \`$self stamp task <n>\` and \`$self stamp dev\`." ;;
 
       pr)
-        cmdline=$(val command "$payload")
+        cmdline=$(cmd_of "$payload")
         if [ -n "$cmdline" ]; then grep -qE 'gh +pr +create' <<<"$cmdline" || exit 0; fi
         bypassed || [ -n "$(get review)" ] || block \
           "opening a PR without closing the local review." \
@@ -160,7 +175,7 @@ case "$cmd" in
           "That reference is the only thread tying PR to issue: without it, cost, lead time and pipeline adoption stop being measurable." ;;
 
       review-label)
-        cmdline=$(val command "$payload")
+        cmdline=$(cmd_of "$payload")
         body="$cmdline$payload"
         grep -q 'status:in-review' <<<"$body" || exit 0
         n=$(num_after 'gh[[:space:]]+issue[[:space:]]+edit' "$cmdline")
@@ -185,7 +200,7 @@ case "$cmd" in
   post) # stamp the milestone from what the tool REALLY did (PostToolUse)
     payload=$(cat)
     [ -n "$gitdir" ] || exit 0
-    cmdline=$(val command "$payload")
+    cmdline=$(cmd_of "$payload")
     changed=0
 
     # New issue created (gh prints the URL; the MCP returns "number": N)

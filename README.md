@@ -1,6 +1,6 @@
 # ferion-engineering
 
-An opinionated engineering standard packaged as a **Claude Code plugin**: spec-driven development,
+An opinionated engineering standard packaged as a **Claude Code and Codex plugin**: spec-driven development,
 a team's good practices, and per-repository context — with **automatic onboarding** and, above all,
 **a development flow that is enforced by hooks instead of described in prose**.
 
@@ -33,7 +33,7 @@ each of those steps worth taking.
 
 ## Requirements
 
-- [Claude Code](https://claude.com/claude-code)
+- [Claude Code](https://claude.com/claude-code) or [Codex](https://developers.openai.com/codex) (CLI or app)
 - [`gh`](https://cli.github.com/) authenticated (`gh auth status`) — this is the only hard
   dependency. Issues, PRs and labels all go through it.
 - Python 3 (used by the cost script and the validation script).
@@ -54,6 +54,20 @@ the session-start hook appears and the skills become available without a prefix 
 ```bash
 /plugin marketplace update ferion && /plugin update ferion-engineering
 ```
+
+### Codex
+
+The same repository is also a **Codex marketplace** (`.agents/plugins/marketplace.json` →
+`.codex-plugin/plugin.json`) — same skills, same hooks, same flow gate:
+
+```bash
+codex plugin marketplace add FerionAI/ferion-engineering
+codex          # then /plugins → install ferion-engineering, and start a new session
+```
+
+Then run `/hooks` once and **trust** the plugin hooks — Codex skips untrusted hooks, and without
+them the flow is not enforced. To update: `codex plugin marketplace upgrade`. Differences from
+Claude are listed in [docs/multi-llm-distribution.md](docs/multi-llm-distribution.md#3-codex--the-same-plugin).
 
 > **Not a developer (PM/QA)?** Ask someone to install it once; after that, just talk to it in plain
 > language — start with `/setup` (configures) or `/start` (does the work).
@@ -123,11 +137,11 @@ The entry point is **`start`**: describe what you need in plain language — "bu
 data?" — and it routes you. For a full end-to-end feature, the **`ship`** combo orchestrates
 spec → vertical slice → integrations → quality → review → PR.
 
-## Using it outside Claude
+## Using it in other agents
 
 `AGENTS.md` + `memory/constitution.md` are the **portable core**: drop them into a repository and
-Cursor, Gemini CLI or Codex get the principles, the Definition of Ready/Done and the spec-driven
-process. Skills are a Claude Code feature; the standard is not. See
+Cursor or Gemini CLI get the principles, the Definition of Ready/Done and the spec-driven
+process. (Codex does not need this path: it installs the full plugin — see Install.) See
 [docs/multi-llm-distribution.md](docs/multi-llm-distribution.md).
 
 ## Adapting it to your team

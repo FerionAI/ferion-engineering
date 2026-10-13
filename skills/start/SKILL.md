@@ -17,6 +17,9 @@ Before routing, **read where the flow is** and resume from there:
 bash ${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh status
 ```
 
+> `${CLAUDE_PLUGIN_ROOT}` is the plugin root. If it is empty in your shell (Codex), use the folder
+> two levels above this `SKILL.md` — and the same for every `${CLAUDE_PLUGIN_ROOT}` in other skills.
+
 Every code change goes through 6 steps, **in this order, no skipping and no reordering**:
 
 | # | Step | Closes when… | Where |

@@ -16,7 +16,8 @@ errors = []
 def err(m): errors.append(m)
 
 # 1) Manifest JSON
-for j in [".claude-plugin/plugin.json", ".claude-plugin/marketplace.json", "hooks/hooks.json", ".mcp.json"]:
+for j in [".claude-plugin/plugin.json", ".claude-plugin/marketplace.json", ".codex-plugin/plugin.json",
+          ".agents/plugins/marketplace.json", "hooks/hooks.json", ".mcp.json"]:
     if not os.path.exists(j):
         err(f"missing manifest: {j}"); continue
     try:
@@ -88,6 +89,22 @@ try:
             err(f"marketplace {label} {v} != plugin.json {pv}")
 except Exception as e:
     err(f"failed comparing plugin/marketplace versions: {e}")
+
+# 5b) Codex manifest: same plugin, same version, and its paths resolve (one plugin, two hosts)
+try:
+    cp = json.load(open(".claude-plugin/plugin.json", encoding="utf-8"))
+    cx = json.load(open(".codex-plugin/plugin.json", encoding="utf-8"))
+    for k in ("name", "version"):
+        if cx.get(k) != cp.get(k):
+            err(f".codex-plugin/plugin.json {k} {cx.get(k)} != .claude-plugin/plugin.json {cp.get(k)}")
+    for k in ("skills", "mcpServers"):
+        if cx.get(k) and not os.path.exists(cx[k]):
+            err(f".codex-plugin/plugin.json {k} -> {cx[k]} does not exist")
+    cm = json.load(open(".agents/plugins/marketplace.json", encoding="utf-8"))
+    if not any(p.get("name") == cp.get("name") for p in cm.get("plugins", [])):
+        err(".agents/plugins/marketplace.json does not list the plugin")
+except Exception as e:
+    err(f"failed checking the Codex manifests: {e}")
 
 # 6) The team config template ships, the real one never does.
 if not os.path.exists("config/team-config.example.md"):
