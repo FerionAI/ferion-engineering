@@ -28,6 +28,8 @@ Covers the full cycle (idea to merge) for PM, QA and dev.
   `apply_patch` with the paths in the patch headers (`flow-gate.sh` handles both; cover new cases
   in `hooks/flow-gate.test.sh`). Codex manifest version is bumped by release-please. An MCP server change goes in **both**
   `.mcp.json` and `.codex-plugin/mcp.json` (Codex ignores `headers`; it uses `bearer_token_env_var`).
+- Every hook command in `hooks/hooks.json` runs through `hooks/emit.sh <Event> …`: Codex rejects
+  plain stdout that starts with `[` as invalid JSON, so output goes out as `additionalContext` JSON.
 - Validate before committing: `sh scripts/validate-plugin.sh` (manifests, frontmatter, refs,
   constitution sync, playbook index, hook tests, leak check).
 

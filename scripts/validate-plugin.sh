@@ -166,6 +166,9 @@ sh scripts/check-leaks.sh || exit 1
 # The hook that blocks AI signatures on commits/PRs (P3) still works
 sh hooks/no-ai-signature.test.sh || exit 1
 
+# Hook output reaches Claude and Codex as valid JSON additionalContext; blocks stay blocks
+sh hooks/emit.test.sh || exit 1
+
 # The mandatory-flow gates (issue -> in progress -> local review -> PR + cost -> in review):
 # no hole, no false block
 sh hooks/flow-gate.test.sh || exit 1
