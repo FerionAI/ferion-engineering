@@ -28,6 +28,7 @@ messages suggest and how it reads CI.
 | **Assume** (step 2) | `gh issue edit 123 --add-assignee @me --add-label status:in-progress` | `glab issue update 123 --assignee <your-username> --label status::in-progress` |
 | Comment / **cost** (step 5) | `gh issue comment 123 --body "…"` | `glab issue note 123 -m "…"` |
 | **To review** (step 6) | `gh issue edit 123 --add-label status:in-review` | `glab issue update 123 --label status::in-review --unlabel status::in-progress` |
+| **To QA** (tech lead, skill `approve`) | `gh issue edit 123 --remove-label status:in-review --add-label status:in-qa` | `glab issue update 123 --label status::in-qa --unlabel status::in-review` |
 | List by stage | `gh issue list --label status:in-progress` | `glab issue list --label status::in-progress` |
 | Mine | `gh issue list --assignee @me` | `glab issue list --assignee @me` |
 | Labels that exist | `gh label list` | `glab label list` |
@@ -36,6 +37,9 @@ messages suggest and how it reads CI.
 | Read a PR/MR | `gh pr view 77 --json title,body,files,reviews` | `glab mr view 77 --comments` |
 | Diff | `gh pr diff 77` | `glab mr diff 77` |
 | CI of the PR/MR | `gh pr checks 77` | `glab ci status` (branch) · `glab mr view 77 --output json` → `head_pipeline.status` |
+| Tech lead: **approve** | `gh pr review 77 --approve --body "…"` | `glab mr approve 77` |
+| Tech lead: **request changes** | `gh pr review 77 --request-changes --body "…"` | `glab mr note 77 -m "…"` (then return the issue to in progress) |
+| Tech lead: the human decision the QA gate reads | `gh pr view 77 --json reviewDecision,latestReviews` | `glab api "projects/:fullpath/merge_requests/77/approvals"` → a name in `approved_by` · `glab mr view 77 --output json` → `detailed_merge_status` |
 | Failing CI log | `gh run view <id> --log-failed` | `glab ci trace <job>` |
 | Another repo | `--repo org/repo` | `-R group/project` |
 | Raw API | `gh api repos/{owner}/{repo}/…` | `glab api projects/:id/…` |

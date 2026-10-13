@@ -190,5 +190,46 @@ check 2 "$(g gate pr "$pr70")"                  "a PR with no spec on the branch
 echo s >"$T/specs/001/spec.md"; gc add specs; gc commit -m spec
 check 0 "$(g gate pr "$pr70")"                  "a PR with a spec on the branch passes"
 
+# 11) Tech lead (approve): labelling in-qa needs a human decision on the PR + green CI; fixing the branch is allowed
+mkdir -p "$T/bin"; printf '#!/bin/sh\ncase "$2" in view) cat "%s/decision" ;; checks) cat "%s/checks" ;; esac\n' "$T" "$T" >"$T/bin/gh"; chmod +x "$T/bin/gh"
+: >"$T/decision"; : >"$T/checks"
+tl() { (cd "$T" && PATH="$T/bin:$PATH" FERION_APPROVALS="$T/approvals" bash "$H" "$@" >/dev/null 2>&1); }
+gt() { (cd "$T" && printf '%s' "$3" | PATH="$T/bin:$PATH" FERION_APPROVALS="$T/approvals" bash "$H" "$1" "$2" >/dev/null 2>&1; echo $?); }
+to_qa='{"tool_name":"Bash","tool_input":{"command":"gh issue edit 7 --remove-label status:in-review --add-label status:in-qa"}}'
+back='{"tool_name":"Bash","tool_input":{"command":"gh issue edit 7 --remove-label status:in-review --add-label status:in-progress"}}'
+s reset
+tl tl 7 https://github.com/acme/app/pull/9
+check 0 "$(gt gate edit "$edit_repo")"          "the tech lead fixes the branch of the PR under review"
+check 2 "$(gt gate review-label "$to_qa")"      "in-qa with no decision on the PR is blocked"
+echo CHANGES_REQUESTED >"$T/decision"
+check 2 "$(gt gate review-label "$to_qa")"      "in-qa with changes requested is blocked"
+check 0 "$(gt gate review-label "$back")"       "changes requested: returning it to dev passes"
+echo APPROVED >"$T/decision"; printf 'build\tfail\t1m\n' >"$T/checks"
+check 2 "$(gt gate review-label "$to_qa")"      "approved with a red CI is blocked"
+: >"$T/checks"
+check 0 "$(gt gate review-label "$to_qa")"      "approved with a green CI passes"
+check 0 "$(cd /; printf '%s' "$to_qa" | PATH="$T/bin:$PATH" FERION_APPROVALS="$T/approvals" bash "$H" gate review-label >/dev/null 2>&1; echo $?)" "the QA gate also runs outside a repo"
+gt post issue "$to_qa" >/dev/null
+check 0 "$(grep -c '^7=' "$T/approvals")"       "the move ends the tech lead review"
+check "" "$(mk task)"                           "the tech lead's move is not a dev flow of this repo"
+check 2 "$(gt gate edit "$edit_repo")"          "with the review over, editing is blocked again"
+s stamp task 8; s stamp dev; s stamp review
+g post issue '{"tool_name":"Bash","tool_input":{"command":"gh pr create"},"tool_response":{"stdout":"https://github.com/acme/app/pull/10"}}' >/dev/null
+: >"$T/decision"
+check 2 "$(gt gate review-label '{"tool_name":"Bash","tool_input":{"command":"gh issue edit 8 --add-label status:in-qa"}}')" "the flow's own issue cannot skip the tech lead to QA"
+# the same QA gate on a GitLab MR: the human yes is a name in approved_by, changes come from detailed_merge_status
+printf '#!/bin/sh\ncase "$1" in mr) cat "%s/glview" ;; api) cat "%s/glappr" ;; esac\n' "$T" "$T" >"$T/bin/glab"; chmod +x "$T/bin/glab"
+gl_qa='{"tool_name":"Bash","tool_input":{"command":"glab issue update 12 --unlabel status::in-review --label status::in-qa"}}'
+tl tl 12 https://gitlab.com/acme/app/-/merge_requests/31
+echo '{"iid":31,"detailed_merge_status":"mergeable","head_pipeline":{"status":"success"}}' >"$T/glview"
+echo '{"approved":true,"approved_by":[]}' >"$T/glappr"
+check 2 "$(gt gate review-label "$gl_qa")"      "GitLab: approved=true with nobody in approved_by is not a human yes"
+echo '{"approved":true,"approved_by":[{"user":{"username":"lead"}}]}' >"$T/glappr"
+check 0 "$(gt gate review-label "$gl_qa")"      "GitLab: an approver + green pipeline lets status::in-qa through"
+echo '{"iid":31,"detailed_merge_status":"mergeable","head_pipeline":{"status":"failed"}}' >"$T/glview"
+check 2 "$(gt gate review-label "$gl_qa")"      "GitLab: approved with a failed MR pipeline is blocked"
+echo '{"iid":31,"detailed_merge_status":"requested_changes","head_pipeline":{"status":"success"}}' >"$T/glview"
+check 2 "$(gt gate review-label "$gl_qa")"      "GitLab: status::in-qa with changes requested is blocked"
+
 rm -rf "$T"
 [ "$fails" -eq 0 ] && echo "OK flow-gate: $total cases" || { echo "x flow-gate: $fails failure(s)"; exit 1; }

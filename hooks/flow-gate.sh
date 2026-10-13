@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
-# Mandatory flow: issue -> in progress -> implement -> local review -> PR + cost -> in review.
+# Mandatory flow: issue -> in progress -> implement -> local review -> PR + cost -> in review
+# -> (tech lead, skill `approve`) PR approved by a human + CI green -> in QA.
 #
 # Prose does not hold an order; a gate does. This hook keeps the flow state per repository and
 # BLOCKS (exit 2) the tool when a step is skipped, naming exactly which step is missing.
 # Milestones are stamped from what the tool ACTUALLY did (PostToolUse), never from a claim.
 #
-# State: <gitdir>/ferion-flow (outside version control). Outside a git repo: blocks nothing, stays silent.
+# State: <gitdir>/ferion-flow (outside version control). Outside a git repo: blocks nothing, stays silent,
+# except the QA move of an issue the tech lead registered (`tl`) — that state lives in ~/.claude/ferion-approvals.
 # It also keeps each issue's cost `baseline` (UTC) — what `cost` measures from, so one session's
 # second issue does not inherit the first one's tokens.
 #
@@ -25,6 +27,8 @@ here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 gitdir=$(git rev-parse --absolute-git-dir 2>/dev/null) || gitdir=""
 root=$(git rev-parse --show-toplevel 2>/dev/null) || root=""
 F="${gitdir:-${TMPDIR:-/tmp}}/ferion-flow"
+# Tech lead review (skill `approve`): <issue>=<PR URL>, per machine — the tech lead's session crosses repos.
+A="${FERION_APPROVALS:-$HOME/.claude/ferion-approvals}"
 
 get() { [ -f "$F" ] && sed -n "s/^$1=//p" "$F" | tail -1; }
 put() {
@@ -55,11 +59,15 @@ forge() {
   git remote get-url origin 2>/dev/null | grep -qi gitlab && echo gitlab || echo github
 }
 if [ "$(forge)" = gitlab ]; then
-  PR=MR; L_PROG='status::in-progress'; L_REV='status::in-review'
+  PR=MR; L_PROG='status::in-progress'; L_REV='status::in-review'; L_QA='status::in-qa'
+  C_RETURN='glab issue update <n> --unlabel status::in-review --label status::in-progress'
+  C_APPROVE='glab mr approve <pr>'; C_REQCHANGES='glab mr note <pr> -m "<blockers>"'
   C_ASSUME='glab issue update <n> --assignee <your-username> --label status::in-progress'
   C_PR='glab mr create --description "Closes #'; C_COMMENT='glab issue note <n> -m'; C_CHECKS='glab ci status'
 else
-  PR=PR; L_PROG='status:in-progress'; L_REV='status:in-review'
+  PR=PR; L_PROG='status:in-progress'; L_REV='status:in-review'; L_QA='status:in-qa'
+  C_RETURN='gh issue edit <n> --remove-label status:in-review --add-label status:in-progress'
+  C_APPROVE='gh pr review <pr> --approve --body "<summary>"'; C_REQCHANGES='gh pr review <pr> --request-changes --body "<blockers>"'
   C_ASSUME='gh issue edit <n> --add-assignee @me --add-label status:in-progress'
   C_PR='gh pr create --body "Closes #'; C_COMMENT='gh issue comment <n> --body'; C_CHECKS='gh pr checks'
 fi
@@ -81,6 +89,9 @@ em() { # em <milestone> [n]: issue n has the milestone. No n: the milestone exis
   [ -n "$v" ] && { [ -z "${2:-}" ] || has "$v" "$2"; }
 }
 add() { local v; v=$(get "$1"); has "$v" "$2" || put "$1" "${v:+$v }$2"; }
+adds() { # adds <label regex> <text>: the call ADDS that label (`--add-label`/glab `--label`, or the label set an MCP call writes)
+  grep -qE -- "--(add-)?label[=[:space:]]+[^[:space:]]*($1)|\"labels\"[^]]*\"($1)\"" <<<"$2"
+}
 lacking() { local k; for k in $(get task); do em "$1" "$k" || printf '#%s ' "$k"; done; }   # issues without it
 
 flow_status() {
@@ -88,6 +99,10 @@ flow_status() {
   t=$(get task); b=$(get bypass)
   if [ -n "$b" ]; then
     echo "[Flow] **BYPASS active** in this repo: $b — declare it in your delivery summary. Back to the flow: \`$self reset\`."
+    return
+  fi
+  if [ -z "$t" ] && [ -n "$(get tl)" ]; then
+    echo "[Flow] tech lead review of **#$(get tl)** (skill \`approve\`): a mechanical gap is fixed on the PR branch, a judgment call becomes a comment, approval only with the tech lead's yes. Labelling it \`$L_QA\` needs the $PR approved and CI green (the gate checks the forge, not the conversation)."
     return
   fi
   if [ -z "$t" ]; then
@@ -152,6 +167,27 @@ one_session_one_group() { # <payload>: a session that already edited one group's
   for k in $t; do add session_issues "$k"; done
 }
 
+# ponytail: keyed by issue number — two repos' #N under review on one machine at once collide; key by owner/repo#N if that happens.
+tl_pr() { [ -n "$1" ] && [ -f "$A" ] && sed -n "s/^$1=//p" "$A" | tail -1; }   # the PR the tech lead is reviewing
+
+decision() { # <PR/MR URL> -> APPROVED | CHANGES_REQUESTED | empty. No CLI/auth: "no-gh".
+  case "$1" in */merge_requests/*)   # GitLab: a reviewer requested changes, or someone is in approved_by
+    command -v glab >/dev/null 2>&1 || { echo no-gh; return; }
+    local iid=${1##*/} out
+    out=$(glab mr view "$iid" --output json 2>/dev/null | tr -d '\n') || { echo no-gh; return; }
+    grep -qE '"detailed_merge_status"[[:space:]]*:[[:space:]]*"requested_changes"' <<<"$out" && { echo CHANGES_REQUESTED; return; }
+    # `approved` alone is true when no rule requires approval; a name in approved_by is the human yes
+    out=$(glab api "projects/:fullpath/merge_requests/$iid/approvals" 2>/dev/null | tr -d '\n') || { echo no-gh; return; }
+    grep -qE '"approved_by"[[:space:]]*:[[:space:]]*\[[[:space:]]*\{' <<<"$out" && echo APPROVED
+    return ;;
+  esac
+  command -v gh >/dev/null 2>&1 || { echo no-gh; return; }
+  # reviewDecision is empty in a repo with no required review: then each reviewer's latest review counts
+  gh pr view "$1" --json reviewDecision,latestReviews -q 'if .reviewDecision != "" then .reviewDecision
+    else [.latestReviews[].state] | if index("CHANGES_REQUESTED") then "CHANGES_REQUESTED"
+    elif index("APPROVED") then "APPROVED" else "" end end' 2>/dev/null || echo no-gh
+}
+
 ci_red() { # <PR/MR ref> -> 0 when a check IS failing. No CLI / no auth / no checks: never blocks.
   local ref=$1 out
   [ -n "$ref" ] && [ "$ref" != "1" ] || return 1
@@ -197,15 +233,24 @@ case "$cmd" in
 
   reset) fresh; flow_status ;;   # the session link stays: reset is not a way around the session gate
 
+  tl) # tl <issue> <PR URL> — the tech lead started reviewing: arms the QA gate and allows fixing the PR branch
+    n=${arg#\#}; url=${3:-}
+    [ -n "$n" ] && [ -n "$url" ] || { echo "usage: $self tl <issue> <PR URL>" >&2; exit 1; }
+    mkdir -p "$(dirname "$A")"
+    { [ -f "$A" ] && grep -v "^$n=" "$A"; printf '%s=%s\n' "$n" "$url"; } >"$A.tmp" && mv -f "$A.tmp" "$A"
+    [ -z "$gitdir" ] || put tl "$n"
+    echo "[Flow] tech lead review of #$n: labelling it \`$L_QA\` needs $url approved by a human and its CI green." ;;
+
   gate)
     payload=$(cat)
-    [ -n "$gitdir" ] || exit 0            # outside a git repo there is no flow to protect
+    # outside a git repo there is no flow to protect — except the tech lead's move, which crosses repos
+    [ -n "$gitdir" ] || [ "$arg" = review-label ] || exit 0
     case "$arg" in
       edit)
         target=$(val file_path "$payload"); [ -n "$target" ] || target=$(val notebook_path "$payload")
         [ -n "$target" ] || target=$(patch_targets "$payload")
         in_repo "$target" || exit 0                         # file outside the repo (scratch/tmp): free
-        bypassed || [ -n "$(get dev)" ] || block \
+        bypassed || [ -n "$(get dev)" ] || [ -n "$(get tl)" ] || block \
           "editing code before the \`in progress\` milestone." \
           "Make sure the issue exists (skill \`issues\`): ask which one, or create it. Do not scan the backlog guessing." \
           "Go through \`spec-flow\` (specify->clarify->plan->tasks, which generates \`specs/<feature>/\`) — do not jump from the issue straight to code." \
@@ -228,7 +273,7 @@ case "$cmd" in
           esac
         done
         [ "$writes" = 1 ] || exit 0
-        bypassed || [ -n "$(get dev)" ] || block \
+        bypassed || [ -n "$(get dev)" ] || [ -n "$(get tl)" ] || block \
           "writing to a repo file (through the shell) before the \`in progress\` milestone." \
           "Same rule as the editor: issue (\`issues\`) -> spec-flow -> assume the issue and label it \`$L_PROG\`." \
           "Issue already assumed outside the agent? \`$self stamp task <n>\` and \`$self stamp dev\`."
@@ -260,11 +305,40 @@ case "$cmd" in
           "Run \`spec-flow\`: a new feature generates \`specs/<feature>/\`; a bug fix **updates** the feature's existing spec. Commit it and repeat." \
           "A change with no behaviour (dependency, config, docs)? \`$self bypass \"no spec: <reason>\"\` — and declare it in the summary." ;;
 
-      review-label)
+      review-label) # status labels: `in-review` closes the dev flow, `in-qa` is the tech lead's move
         cmdline=$(cmd_of "$payload")
         body="$cmdline$payload"
-        grep -qE 'status::?in-review' <<<"$body" || exit 0
+        grep -qE 'status::?in-' <<<"$body" || exit 0
         n=$(issue_no "$cmdline" "$payload")
+        url=$(tl_pr "$n")
+        # the flow's own issue going straight to QA is the same move: the tech lead's approval is not optional
+        if [ -z "$url" ] && [ -n "$gitdir" ] && adds 'status::?in-qa' "$body" && has "$(get task)" "$n"; then
+          url=$(get pr); case "$url" in http*) ;; *) url="" ;; esac
+        fi
+        if [ -n "$url" ]; then   # under tech lead review: the move is an approval (QA) or a return (dev)
+          qa=""; adds 'status::?in-qa' "$body" && qa=1
+          pid=$url; case "$url" in */merge_requests/*) pid=${url##*/} ;; esac
+          case "$(decision "$url")" in
+            no-gh) ;;              # no gh, no way to check: degrade, never block
+            APPROVED)
+              [ -z "$qa" ] || bypassed || ! ci_red "$url" || block \
+                "labelling #$n \`$L_QA\` with a failing CI check on $PR $url." \
+                "See what broke: \`$C_CHECKS\` ($url) — fix it on the PR branch (mechanical gap) or return it to the developer." \
+                "QA receiving a red build is rework twice over." ;;
+            CHANGES_REQUESTED)     # returning it to dev is legitimate; QA is not
+              [ -z "$qa" ] || bypassed || block \
+                "labelling #$n \`$L_QA\` while $PR $url has changes requested." \
+                "Return it to the developer instead: \`${C_RETURN//<n>/$n}\`." ;;
+            *) bypassed || block \
+                "moving #$n with no human decision recorded on $PR $url." \
+                "Show the report to the tech lead and ask: approve, request changes, or skip?" \
+                "Approve -> \`${C_APPROVE//<pr>/$pid}\`, then label it \`$L_QA\`." \
+                "Request changes -> \`${C_REQCHANGES//<pr>/$pid}\`, then return it to \`$L_PROG\`." ;;
+          esac
+          exit 0
+        fi
+        [ -n "$gitdir" ] || exit 0
+        grep -qE 'status::?in-review' <<<"$body" || exit 0
         t=$(get task)
         [ -z "$t" ] || [ -z "$n" ] || has "$t" "$n" || exit 0   # an issue outside the group: not this flow
         if em dev "$n"; then                                    # dev already happened => this is its in-review milestone
@@ -284,8 +358,15 @@ case "$cmd" in
 
   post) # stamp the milestone from what the tool REALLY did (PostToolUse)
     payload=$(cat)
-    [ -n "$gitdir" ] || exit 0
     cmdline=$(cmd_of "$payload")
+    # the tech lead's move (approved -> QA, or returned -> dev) ends the review; it is not this repo's dev flow
+    n=$(issue_no "$cmdline" "$payload")
+    if [ -n "$(tl_pr "$n")" ] && adds 'status::?in-(qa|progress)' "$cmdline$payload"; then
+      grep -v "^$n=" "$A" >"$A.tmp"; mv -f "$A.tmp" "$A"
+      [ -n "$gitdir" ] && [ "$(get tl)" = "$n" ] && put tl ""
+      exit 0
+    fi
+    [ -n "$gitdir" ] || exit 0
     changed=0
 
     # New issue created (gh/glab print the URL; the MCP returns "number"/"iid": N)
@@ -325,5 +406,5 @@ case "$cmd" in
     [ "$changed" = 1 ] && flow_status
     exit 0 ;;
 
-  *) echo "usage: $self <status|stamp|bypass|reset|gate <edit|bash-edit|pr|review-label>|post>" >&2; exit 1 ;;
+  *) echo "usage: $self <status|stamp|bypass|reset|tl|gate <edit|bash-edit|pr|review-label>|post>" >&2; exit 1 ;;
 esac

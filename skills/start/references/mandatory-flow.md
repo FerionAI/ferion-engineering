@@ -15,8 +15,10 @@ that touches code) operates on top of it.
 | 5 | **PR + cost** | PR open with `Closes #N` **for every issue** **and** tokens/USD/hours recorded on each issue | `gh pr create` and `gh issue comment` with the cost marker (auto) |
 | 6 | **in review** | issue labelled `status:in-review`, **with the PR's CI green**, and said so in the summary | `gh issue edit --add-label` (auto) |
 
-From merge onward, humans move things (QA, deploy) — the agent has no reliable signal and does not
-invent one.
+After step 6 the tech lead takes it to QA (skill `approve`): the agent fixes mechanical gaps on the
+PR branch and labels `status:in-qa` only after the tech lead approves on GitHub — the gate checks the
+real decision, not the conversation. From there on, humans move things (QA, deploy) — the agent has no
+reliable signal and does not invent one.
 
 **GitLab:** identical steps with `glab` — `glab issue create`, `glab issue update --assignee/--label
 status::in-progress`, `glab mr create` with `Closes #N`, `glab issue note` for the cost and
@@ -26,7 +28,7 @@ only decides which commands it suggests and how it reads CI — the MR's head pi
 
 ## The gates (hooks — they really block)
 
-`hooks/flow-gate.sh` keeps the state in `<repo>/.git/ferion-flow` and reacts to 4 triggers. Blocking =
+`hooks/flow-gate.sh` keeps the state in `<repo>/.git/ferion-flow` and reacts to 5 triggers. Blocking =
 `exit 2`, with a message naming **which step is missing and how to close it**:
 
 | Trigger | Requires | Blocks when |
@@ -34,6 +36,7 @@ only decides which commands it suggests and how it reads CI — the MR's head pi
 | `Write`/`Edit`/`MultiEdit`/`NotebookEdit` on a repo file | step 2 | code with no assumed issue · another group's code **in the same session** (an unlinked issue needs a new session, § Batch) |
 | `Bash` that writes into the repo (`>`, `>>`, `sed -i`, `tee`, `git apply`, `patch`) | step 2 | the same thing, through the back door |
 | `gh pr create` / `glab mr create` / the MCP equivalent | steps 3+4 | a PR without the local review closed · a PR **with no spec**: no file under `specs/` changed on the branch since `main` (no remote: no block) · a PR **that misses an issue** (of the group) in the title/body and the branch |
+| labelling `status:in-qa` / `status::in-qa` (an issue the tech lead registered with `tl`, or the flow's own issue) | the tech lead's yes | a PR with **no human decision**, with changes requested, or with a **red CI check** (checked live with `gh` or `glab`; no CLI: no block). Works outside a repo too — the tech lead's session crosses repos |
 | labelling `status:in-review` (with step 2 done **on that issue**) | steps 4+5 | moving to review without the PR **and** the cost **of that issue** · labelling with a **red CI check** on the PR (the hook reads `gh pr checks` or the MR's head pipeline via `glab`; with no CLI/no network it does not block) |
 
 Outside a git repository, and for files outside the repo root (scratch, `/tmp`), **nothing is
@@ -55,6 +58,9 @@ bash <plugin>/hooks/flow-gate.sh stamp task 12 13  # a group: one PR for both (�
                                                    #   current issue extends the group without clearing it
 bash <plugin>/hooks/flow-gate.sh stamp dev         # issue assumed outside the agent
 bash <plugin>/hooks/flow-gate.sh stamp review      # preflight came out green
+bash <plugin>/hooks/flow-gate.sh tl 42 <PR URL>    # the tech lead starts reviewing (skill `approve`): arms
+                                                   #   the QA gate, allows fixing the PR branch; the state
+                                                   #   lives in ~/.claude/ferion-approvals (per machine)
 bash <plugin>/hooks/flow-gate.sh bypass "<reason>" # recorded exception (see below)
 bash <plugin>/hooks/flow-gate.sh reset             # back to the flow (ends the bypass)
 ```

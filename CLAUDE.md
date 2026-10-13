@@ -47,7 +47,8 @@ that **block (exit 2)** an out-of-order step — editing code without an assumed
 in the same session**, opening a PR without local review (`stamp review` from `preflight`), **with no spec
 on the branch** **or without every issue's reference**, labelling for
 review without PR + cost (of that issue) **or with a red CI check** (it reads `gh pr checks` from the URL kept in the
-`pr` milestone; with no `gh` it degrades instead of blocking).
+`pr` milestone; with no `gh` it degrades instead of blocking), labelling for QA an issue the tech lead
+registered (`tl`, skill `approve`) without the PR approved by a human + CI green.
 `PostToolUse` stamps the milestones from what the tool actually did; the only exception is
 `bypass "<reason>"` (recorded and declared in the summary). The state also holds each issue's cost
 `baseline`, so `cost` measures **per issue, not per session**. Mechanics:
