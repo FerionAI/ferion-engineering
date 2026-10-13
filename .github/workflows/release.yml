@@ -8,6 +8,12 @@ permissions:
   contents: write
   pull-requests: write
 
+# One run at a time: merges that land seconds apart used to race, and the slower run shipped a
+# release PR built from the files it had read before the newer merge (0.6.0 reverted #26 this way).
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+
 jobs:
   release-please:
     runs-on: ubuntu-latest
@@ -51,6 +57,21 @@ jobs:
         env:
           LEAK_PATTERNS: ${{ secrets.LEAK_PATTERNS }}
         run: sh scripts/validate-plugin.sh
+
+      # Validation reads the PR's own tree, so a stale release PR passes it. What gives it away is
+      # the diff: a release only moves version strings and adds a changelog entry — any other removed
+      # line is a merge from main being reverted. Fail loudly; the next push rebuilds the PR.
+      - name: The release PR only moves versions
+        if: steps.find.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          bad=$(gh pr diff "${{ steps.find.outputs.number }}" --repo "$GITHUB_REPOSITORY" | awk '
+            /^diff --git/ { f = $3; sub(/^a\//, "", f); next }
+            /^(---|\+\+\+) / { next }
+            /^-/ && f != "CHANGELOG.md" && f != ".release-please-manifest.json" &&
+              $0 !~ /x-release-please-version|"version"/ { print f ": " substr($0, 1, 100) }')
+          [ -z "$bad" ] || { echo "The release PR removes more than version strings — not shipping it:"; echo "$bad" | head -20; exit 1; }
 
       - name: Merge the release PR
         if: steps.find.outputs.number != ''
