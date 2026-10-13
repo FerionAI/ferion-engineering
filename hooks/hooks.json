@@ -1,32 +1,32 @@
 {
-  "description": "Injects the engineering standard at session start (with the current flow step) and ENFORCES the mandatory flow issue -> in progress -> implement -> local review -> PR + cost -> in review: the flow-gate.sh gates block (exit 2) editing code without an assumed issue (or another group's code in the same session), opening a PR without local review, without a spec on the branch or without every issue's reference, labelling for review without PR/MR + cost, and labelling for QA (the tech lead's phase, skill approve) without the PR/MR approved by a human and CI green; PostToolUse stamps each milestone from what the tool actually did. It also blocks AI signatures on commits and PRs (P3). At session start it also reports which declared data sources have no credential configured; blocking a skill on that is opt-in (see the `integrations` skill). And it warns when the installed plugin is behind the latest release (hooks/check-version.sh: daily cache, refreshed in the background), because a third-party marketplace does not update itself. Usage telemetry (hooks/telemetry.py) is OFF unless the person opts in (~/.claude/ferion-telemetry): only then, at most once a day and in the background, it posts AGGREGATED usage to a public issue of the plugin's own repo — never a prompt, code, path or command.",
+  "description": "Injects the engineering standard at session start (with the current flow step) and ENFORCES the mandatory flow issue -> in progress -> implement -> local review -> PR + cost -> in review: the flow-gate.sh gates block (exit 2) editing code without an assumed issue (or another group's code in the same session), opening a PR without local review, without a spec on the branch or without every issue's reference, labelling for review without PR/MR + cost, and labelling for QA (the tech lead's phase, skill approve) without the PR/MR approved by a human and CI green; PostToolUse stamps each milestone from what the tool actually did. It also blocks AI signatures on commits and PRs (P3). At session start it also reports which declared data sources have no credential configured; blocking a skill on that is opt-in (see the `integrations` skill). And it warns when the installed plugin is behind the latest release (hooks/check-version.sh: daily cache, refreshed in the background), because a third-party marketplace does not update itself. Usage telemetry (hooks/telemetry.py) is OFF unless the person opts in (~/.claude/ferion-telemetry): only then, at most once a day and in the background, it posts AGGREGATED usage to a public issue of the plugin's own repo — never a prompt, code, path or command. Every hook runs through emit.sh, which hands its output to the agent as JSON additionalContext (the shape Claude and Codex both accept).",
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "cat \"${CLAUDE_PLUGIN_ROOT}/hooks/session-banner.md\"",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/emit.sh\" SessionStart cat \"${CLAUDE_PLUGIN_ROOT}/hooks/session-banner.md\"",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh\" status",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/emit.sh\" SessionStart bash \"${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh\" status",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/check-sources.sh\" banner",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/emit.sh\" SessionStart bash \"${CLAUDE_PLUGIN_ROOT}/hooks/check-sources.sh\" banner",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/check-version.sh\" banner",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/emit.sh\" SessionStart bash \"${CLAUDE_PLUGIN_ROOT}/hooks/check-version.sh\" banner",
             "timeout": 5
           },
           {
             "type": "command",
-            "command": "command -v python3 >/dev/null 2>&1 && python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/telemetry.py\" || true",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/emit.sh\" SessionStart sh -c 'command -v python3 >/dev/null 2>&1 && python3 \"$0\" || true' \"${CLAUDE_PLUGIN_ROOT}/hooks/telemetry.py\"",
             "timeout": 10
           }
         ]
@@ -38,7 +38,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh\" gate edit",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/emit.sh\" PreToolUse bash \"${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh\" gate edit",
             "timeout": 10
           }
         ]
@@ -48,22 +48,22 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/no-ai-signature.sh\"",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/emit.sh\" PreToolUse bash \"${CLAUDE_PLUGIN_ROOT}/hooks/no-ai-signature.sh\"",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh\" gate bash-edit",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/emit.sh\" PreToolUse bash \"${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh\" gate bash-edit",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh\" gate pr",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/emit.sh\" PreToolUse bash \"${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh\" gate pr",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh\" gate review-label",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/emit.sh\" PreToolUse bash \"${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh\" gate review-label",
             "timeout": 10
           }
         ]
@@ -73,7 +73,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh\" gate pr",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/emit.sh\" PreToolUse bash \"${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh\" gate pr",
             "timeout": 10
           }
         ]
@@ -83,7 +83,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh\" gate review-label",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/emit.sh\" PreToolUse bash \"${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh\" gate review-label",
             "timeout": 10
           }
         ]
@@ -95,7 +95,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh\" post",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/emit.sh\" PostToolUse bash \"${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh\" post",
             "timeout": 10
           }
         ]
