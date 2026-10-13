@@ -47,7 +47,8 @@ came out green; declaring it without running is the same hallucination preflight
 ## Commands (the agent uses these; the person never needs to)
 
 ```bash
-bash <plugin>/hooks/flow-gate.sh status            # where the flow is and what the next step is
+bash <plugin>/hooks/flow-gate.sh status            # ONLY if the session banner did not come — the
+                                                   #   SessionStart hook already runs this and injects it
 bash <plugin>/hooks/flow-gate.sh stamp task 123    # a new issue = a new flow (clears milestones and bypass,
                                                    #   and opens this issue's cost baseline)
 bash <plugin>/hooks/flow-gate.sh stamp task 12 13  # a group: one PR for both (§ Batch). Naming the
@@ -61,8 +62,10 @@ bash <plugin>/hooks/flow-gate.sh reset             # back to the flow (ends the 
 ## Resume, never restart
 
 New session, compacted context, a person coming back two days later: the state lives in the repo,
-not in the conversation. **Read `status` and continue from the step it points to.** Do not redo a
-closed step (do not recreate the issue, do not re-apply a label) and do not jump ahead.
+not in the conversation. **`SessionStart` already injects the `status` into the banner — continue
+from the step it points to**, without running the command again (a re-query costs a round trip with
+the whole context and brings nothing new: the milestones only change through what you did). Do not
+redo a closed step (do not recreate the issue, do not re-apply a label) and do not jump ahead.
 
 ## Batch — one PR for what is linked
 

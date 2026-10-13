@@ -50,8 +50,8 @@ wrong wastes the whole task.
 
 - **`glob`/`grep` to locate, read to understand.** In that order.
 - **`gh` for everything GitHub** — issues, PRs, labels, search. No MCP required.
-- **The flow gate tells you where you are:** `flow-gate.sh status` before assuming anything about
-  what is done.
+- **The flow gate tells you where you are:** the session banner already carries its `status` — read
+  it there before assuming anything about what is done; run `flow-gate.sh status` only if it did not come.
 
 ## The meta-rule
 

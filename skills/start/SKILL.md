@@ -11,10 +11,12 @@ explaining in one sentence what you are going to do. Act — do not hand them a 
 
 ## First: the mandatory flow (any request that touches code)
 
-Before routing, **read where the flow is** and resume from there:
+Before routing, **read where the flow is** and resume from there — **the state already came in the
+session banner** (`[Flow] …`, injected by the `SessionStart` hook). Do not run `flow-gate.sh status`
+to re-read what is in front of you: each call pays for the whole context again.
 
 ```bash
-bash ${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh status
+bash ${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh status   # only if the banner did not come (/clear, compacted context)
 ```
 
 > GitLab repo? Same 6 steps with `glab`, MRs and `status::` labels — `issues/references/forge-commands.md`.
