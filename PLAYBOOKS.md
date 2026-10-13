@@ -4,7 +4,7 @@
 > Playbooks are the detail (`references/`) each skill loads on demand (progressive
 > disclosure, P8). The SKILL.md is the entry point; the "how" lives here.
 
-**88 playbooks** across **25** skills.
+**89 playbooks** across **26** skills.
 
 ## agentic-flow (5)
 
@@ -143,6 +143,10 @@
 
 - [`references/deploy-strategies.md`](skills/release/references/deploy-strategies.md) — Deploy strategies
 - [`references/rollback-and-flags.md`](skills/release/references/rollback-and-flags.md) — Rollback, feature flags and risky changes — the checklist
+
+## review (1)
+
+- [`references/review-ai-test.md`](skills/review/references/review-ai-test.md) — Playbook — Review a test written with AI
 
 ## setup (4)
 

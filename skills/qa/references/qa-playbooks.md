@@ -11,6 +11,7 @@ them — hence the paths below.
 | [`automate-scenario`](../../qa-spec/references/automate-scenario.md) | A scenario in the catalog leaves `draft` and becomes an automated test | `qa-spec` |
 | [`bug-to-regression`](../../bug/references/bug-to-regression.md) | A defect was reported and will become a permanent regression test — **before** fixing it | `bug` |
 | [`flaky-triage`](../../preflight/references/flaky-triage.md) | A test failed with no behavior change, in CI or locally | `preflight` |
+| [`review-ai-test`](../../review/references/review-ai-test.md) | You are the developer about to review a spec QA authored with AI | `review` |
 
 Your case is not here: the QA kit (`../SKILL.md`) has the tools for test cases, regression, UX/a11y
 and the gate; the index of every playbook in the plugin is `PLAYBOOKS.md` (root, auto-generated).
