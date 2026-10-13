@@ -4,7 +4,7 @@
 > Playbooks are the detail (`references/`) each skill loads on demand (progressive
 > disclosure, P8). The SKILL.md is the entry point; the "how" lives here.
 
-**82 playbooks** across **22** skills.
+**84 playbooks** across **23** skills.
 
 ## agentic-flow (5)
 
@@ -144,6 +144,11 @@
 ## start (1)
 
 - [`references/mandatory-flow.md`](skills/start/references/mandatory-flow.md) — The mandatory flow — the 6 steps, the gates and the exceptions
+
+## test-data (2)
+
+- [`references/factories-and-endpoint.md`](skills/test-data/references/factories-and-endpoint.md) — The test-data endpoint — contract, guard and cleanup
+- [`references/isolation.md`](skills/test-data/references/isolation.md) — The six isolation rules
 
 ## test-strategy (1)
 
