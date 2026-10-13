@@ -49,12 +49,17 @@ This repository is a **Claude Code marketplace**:
 ```
 
 Reopen the session to load it. Confirm with `/plugin list` (`ferion-engineering@ferion` · enabled) —
-the session-start hook appears and the skills become available without a prefix (e.g. `/start`,
-`/ship`, `/preflight`). To update:
+the session-start hook appears and the skills become available as `/ferion-engineering:<skill>`
+(e.g. `/ferion-engineering:start`) — or just describe what you want, which works everywhere. To
+update (the session-start hook tells you when you are behind):
 
 ```bash
 /plugin marketplace update ferion && /plugin update ferion-engineering
 ```
+
+**Claude Desktop / Cowork** fetches the marketplace differently, and a private fork needs one extra
+setting: [docs/claude-desktop-install.md](docs/claude-desktop-install.md). What is checked before each
+release, and what only a real install proves: [READINESS.md](READINESS.md).
 
 ### Codex
 

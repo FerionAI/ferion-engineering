@@ -101,5 +101,7 @@ registered (`tl`, skill `approve`) without the PR approved by a human + CI green
 ## Where the rest is
 - `README.md` (overview + component table), `CHANGELOG.md`, `CONTRIBUTING.md`,
   `docs/multi-llm-distribution.md` (governance/distribution).
+- `READINESS.md` + `scripts/check-readiness.sh` (in CI) — what fails silently before someone installs;
+  `docs/claude-desktop-install.md` for the desktop app and private forks.
 - `PLAYBOOKS.md` — **auto-generated** index of the playbooks (`references/`) per skill
   (`scripts/gen-playbooks-index.py`; checked in CI). The gold of the plugin, made visible.
