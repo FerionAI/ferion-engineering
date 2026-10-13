@@ -83,7 +83,10 @@ any route that touches code enters the flow at step 1 (or wherever `status` says
 | "understand the user", "what does the data say", "which problem to solve", "is it worth building", "test with a user", "did the flow work?" | `discovery` (design thinking: empathize/ideate/test) |
 | "look at the issues", "what's in review / in the sprint / in the backlog", "take issue #123", "what was asked here" | `issues` (issues are the source of truth) |
 | "create/build a feature", "implement X", "do this from scratch" | **ship** (idea→PR pipeline) — starting from the issue, or `spec-flow` if it is only a spec |
-| "fix a bug", "it's broken" | `integrations` (observability investigates) + `spec-flow` (fix the root cause, not the symptom) |
+| "fix a bug", "it's broken", "found a defect", "reproduce this" | `bug` (bug → scenario → **red test** → fix; investigates with `integrations`/observability and updates the existing spec) |
+| "automate this scenario", "generate the test for checkout-014", "turn this test case into a spec" | `qa-spec` (catalog scenario → automated spec, with a mutation proof) |
+| "test data", "factory", "trait", "test-data endpoint" | `test-data` (factories with domain traits; never preexisting data) |
+| "test strategy", "at which level do I test this", "the epic's test DoR", "test pyramid" | `test-strategy` (levels L0–L4 decided at refinement) |
 | "production is down", "error in production", "open an incident", "postmortem" | `incident` (response + postmortem; mitigate through `release`) |
 | "ship it / deploy", "put it in production", "canary/rollout", "rollback", "feature flag", "cut a release" | `release` (shipping to production safely) |
 | "is it ready for a PR?", "review everything before I push", "make sure it's spotless", "check it didn't hallucinate" | `preflight` (pre-PR gate) |
