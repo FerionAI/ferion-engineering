@@ -4,6 +4,17 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1](https://github.com/FerionAI/ferion-engineering/compare/ferion-engineering-v0.6.0...ferion-engineering-v0.6.1) (2026-10-13)
+
+
+### Bug Fixes
+
+* **docs:** restore what the 0.6.0 release commit reverted ([ed51ad8](https://github.com/FerionAI/ferion-engineering/commit/ed51ad83242bad1b3080050f50add621c99ffbcc))
+* **hooks:** emit hook output as JSON additionalContext for Codex ([263afe6](https://github.com/FerionAI/ferion-engineering/commit/263afe6a1f44fba4b57c220434ea24129f9274f7))
+* **hooks:** emit hook output as JSON additionalContext for Codex ([93ae546](https://github.com/FerionAI/ferion-engineering/commit/93ae546bf73d44d58d84347be4a7c916adf6dbe3)), closes [#29](https://github.com/FerionAI/ferion-engineering/issues/29)
+* **release:** one run at a time, and never ship a release PR that reverts main ([e9360ae](https://github.com/FerionAI/ferion-engineering/commit/e9360aefe110bfa9b6fd6aae85e60341cdf227ea))
+* **release:** restore the docs 0.6.0 reverted, and stop the release race ([5fcaa8f](https://github.com/FerionAI/ferion-engineering/commit/5fcaa8f21ae817268262eebdd524176cc68345ba))
+
 ## [0.6.0](https://github.com/FerionAI/ferion-engineering/compare/ferion-engineering-v0.5.0...ferion-engineering-v0.6.0) (2026-10-13)
 
 
