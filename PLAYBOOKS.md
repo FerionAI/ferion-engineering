@@ -4,7 +4,7 @@
 > Playbooks are the detail (`references/`) each skill loads on demand (progressive
 > disclosure, P8). The SKILL.md is the entry point; the "how" lives here.
 
-**84 playbooks** across **23** skills.
+**86 playbooks** across **24** skills.
 
 ## agentic-flow (5)
 
@@ -114,6 +114,11 @@
 - [`references/test-cases.md`](skills/qa/references/test-cases.md) — Tool — test cases from the issue
 - [`references/ux-a11y-qa.md`](skills/qa/references/ux-a11y-qa.md) — Tool — UX and accessibility QA
 - [`references/verify-and-gate.md`](skills/qa/references/verify-and-gate.md) — Tool — verify in production + the QA gate
+
+## qa-spec (2)
+
+- [`references/automate-scenario.md`](skills/qa-spec/references/automate-scenario.md) — Playbook — Automate a scenario from the catalog
+- [`references/mutation-proof.md`](skills/qa-spec/references/mutation-proof.md) — Mutation proof — the test of the test
 
 ## quality (11)
 

@@ -22,6 +22,7 @@ playbooks is `references/qa-playbooks.md`:
 | To plan exploratory testing | `references/exploratory.md` |
 | To run the exploratory session (L4) step by step | `references/exploratory-session.md` |
 | To automate tests (e2e / unit) — principles and tooling | `references/automation.md` |
+| **To automate a scenario from the catalog** (level, fixture, mutation proof) | skill `qa-spec` |
 | Test data/factories with domain traits | skill `test-data` |
 | To decide scenarios and levels at refinement (test DoR) | skill `test-strategy` |
 | UX and accessibility QA | `references/ux-a11y-qa.md` |
