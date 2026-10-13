@@ -4,7 +4,7 @@ An opinionated engineering standard packaged as a **Claude Code and Codex plugin
 a team's good practices, and per-repository context — with **automatic onboarding** and, above all,
 **a development flow that is enforced by hooks instead of described in prose**.
 
-> **Status:** `0.5.0`<!-- x-release-please-version --> — 28 skills, 86 playbooks. Covers the full
+> **Status:** `0.5.0`<!-- x-release-please-version --> — 29 skills, 87 playbooks. Covers the full
 > cycle from **idea to merge** for PM, QA and dev. Everything team-specific comes from your **team
 > config**: run `setup` once and the team is configured; run `onboard` in a real repository and it
 > fills the context from the code.
@@ -28,7 +28,7 @@ So the process here is **mechanical, not textual**:
   restarting.
 - The only way around it is an explicit `bypass "<reason>"` — recorded, and declared in the summary.
 
-Everything else in this plugin — the constitution, the 28 skills, the playbooks — is what makes
+Everything else in this plugin — the constitution, the 29 skills, the playbooks — is what makes
 each of those steps worth taking.
 
 ## Requirements
@@ -111,6 +111,7 @@ bash hooks/flow-gate.sh status
 | `test-strategy` | Skill | **Test DoR at refinement** — PM, QA and dev decide together the epic's scenarios and the level of each (L0–L4) before the code; without it, everything becomes e2e. |
 | `qa-spec` | Skill | Catalog scenario → automated spec at the lowest level that proves the behavior, with an API fixture and a **mutation proof**; refuses to generate if the data trait does not exist. |
 | `test-data` | Skill | Factories with domain traits ("past-due customer") + a test-data endpoint guarded at route registration, with a `runId`: the test **creates** its state, never depends on preexisting data. |
+| `bug` | Skill | Bug → scenario → **red test** → root-cause fix → green: the regression suite grows where things actually broke; refuses to fix while the test is born green. |
 | `quality` | Skill | Quality and security rule base: OWASP, Nielsen, WCAG, Core Web Vitals, static analysis and DORA metrics. |
 | `design-review` | Skill | **Pre-code design gate** — validates a layout/Figma against the Design Constitution before building; a UX linter with severities. |
 | `design-system` | Skill | Discovers the project's design system and drives its **progressive adoption** — new UI uses it, legacy migrates without blocking deploy. |

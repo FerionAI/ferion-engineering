@@ -4,7 +4,7 @@
 > Playbooks are the detail (`references/`) each skill loads on demand (progressive
 > disclosure, P8). The SKILL.md is the entry point; the "how" lives here.
 
-**86 playbooks** across **24** skills.
+**87 playbooks** across **25** skills.
 
 ## agentic-flow (5)
 
@@ -13,6 +13,10 @@
 - [`references/model-selection.md`](skills/agentic-flow/references/model-selection.md) — Choosing the right model for each part of the task
 - [`references/tools.md`](skills/agentic-flow/references/tools.md) — Toolkit by phase — design, brainstorming and requirements
 - [`references/write-less-code.md`](skills/agentic-flow/references/write-less-code.md) — Writing less code — the decision ladder
+
+## bug (1)
+
+- [`references/bug-to-regression.md`](skills/bug/references/bug-to-regression.md) — Playbook — From bug to regression test
 
 ## context (4)
 

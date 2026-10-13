@@ -18,6 +18,7 @@ playbooks is `references/qa-playbooks.md`:
 | Test cases/plan from the issue | `references/test-cases.md` |
 | To record/look up scenarios (the shared artifact) | `references/scenario-catalog.md` |
 | To report a bug (well structured, as an issue) | `references/bug-report.md` |
+| To **fix** a bug (scenario → red test → fix) | skill `bug` |
 | To know what to retest after a change | `references/risk-and-regression.md` |
 | To plan exploratory testing | `references/exploratory.md` |
 | To run the exploratory session (L4) step by step | `references/exploratory-session.md` |
