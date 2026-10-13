@@ -4,6 +4,23 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0](https://github.com/FerionAI/ferion-engineering/compare/ferion-engineering-v0.5.0...ferion-engineering-v0.6.0) (2026-10-13)
+
+
+### Features
+
+* **bug:** the red test comes before the fix ([e4ae306](https://github.com/FerionAI/ferion-engineering/commit/e4ae3067276e08754d41b91462532888779c8eea))
+* **cost:** efficiency measured in round trips, preflight step 1 in one call ([bc78032](https://github.com/FerionAI/ferion-engineering/commit/bc78032ca6630c7992bf4be6c7a15cf8a2f9ca91))
+* **cost:** measure round trips and print the cost comment ready to post ([d956c5a](https://github.com/FerionAI/ferion-engineering/commit/d956c5a0589dec2c7f64877318e9beba118ee830))
+* **health:** QA metrics that show the suite getting more trustworthy ([3455b9d](https://github.com/FerionAI/ferion-engineering/commit/3455b9d5c7fb14dbc6c34e73085a1764307a2533))
+* **preflight:** block preexisting data and fixed waits before the PR ([ec21cc9](https://github.com/FerionAI/ferion-engineering/commit/ec21cc9a87b186d34264d0b563678587b1fef374))
+* **preflight:** run build, types, lint and tests in one call ([413405a](https://github.com/FerionAI/ferion-engineering/commit/413405a54c10762af6c7a25e00ffbb47fc739e8b))
+* **qa-spec:** a scenario becomes a test that fails when the rule breaks ([6e23ea7](https://github.com/FerionAI/ferion-engineering/commit/6e23ea72f5edd269e329b28b60aa0cdc919b001a))
+* **qa:** a scenario catalog, and the test decided at refinement ([71b59ec](https://github.com/FerionAI/ferion-engineering/commit/71b59ecd45b8643f4309fd4f777d5699410308e3))
+* **qa:** scenario catalog, test data, mutation-proven specs and a red-test-first bug flow ([de6ab95](https://github.com/FerionAI/ferion-engineering/commit/de6ab95d547dae734d394e910c3a8bcfcfddca5f))
+* **review:** a script for reviewing a test written with AI ([e874d5d](https://github.com/FerionAI/ferion-engineering/commit/e874d5da424597a9e1fbd2705a8684e1124ec182))
+* **test-data:** factories with domain traits, so a test creates its state ([a609b57](https://github.com/FerionAI/ferion-engineering/commit/a609b57516be21bf051b70d2cd97ccf8f3e7008b))
+
 ## [0.5.0](https://github.com/FerionAI/ferion-engineering/compare/ferion-engineering-v0.4.0...ferion-engineering-v0.5.0) (2026-10-13)
 
 
