@@ -120,6 +120,20 @@ gh api "repos/{owner}/{repo}/issues/123/comments" --jq '.[].body' | grep -o 'fer
 - Feature pricing from the median of similar issues (see `references/efficiency-and-pricing.md`).
 - The `health` dashboard pulls these numbers **from the issues** for its Cost & Efficiency block.
 
+### The plugin's own usage (where the plugin costs, not what one issue cost)
+
+A cost comment only exists for an issue that **reached the end of the flow** — it measures the issue,
+not adoption. For "where does the flow leak, which skill eats the round trips" across people, the
+source is the aggregated telemetry posted to an issue of the plugin's own repo — **only from people
+who opted in** (`touch ~/.claude/ferion-telemetry`; ADR-0005):
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/hooks/telemetry.py --preview   # what would leave this machine (no opt-in needed)
+python3 ${CLAUDE_PLUGIN_ROOT}/hooks/telemetry.py --report    # this month: the flow funnel + cost per skill
+```
+
+Aggregated, with no ranking per person — **measure to decide, not to punish**.
+
 ## Principles
 
 - **The issue carries the cost** — as it carries scope and QA.

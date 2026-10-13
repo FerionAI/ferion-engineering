@@ -92,6 +92,11 @@ registered (`tl`, skill `approve`) without the PR approved by a human + CI green
   outside git), never in `config/team-config.md` — the last person to run `setup` would set everyone's
   role. A weak signal **proposes**, never assumes; `skills/ROLES.md` is checked in both directions by
   the build.
+- **Telemetry is opt-in** (ADR-0005): aggregated usage goes to a public issue of this repo only from
+  people who ran `touch ~/.claude/ferion-telemetry` — at most once a day, in the background, numbers
+  only. Opt-out is defensible for an internal plugin whose issue sits in a private repo the team
+  already reads; here the comment is public and signed by the sender, so the default is off. Reading:
+  `python3 hooks/telemetry.py --report`.
 - **The tech lead closes the code review, not the agent** (ADR-0006): a third milestone, `in QA`
   (skill `approve`). The agent fixes the mechanical gap on the PR branch and turns judgment into
   comments; the approval comes from the tech lead's account, only after their yes, one PR at a time.

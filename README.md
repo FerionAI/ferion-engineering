@@ -158,6 +158,29 @@ The entry point is **`start`**: describe what you need in plain language — "bu
 data?" — and it routes you. For a full end-to-end feature, the **`ship`** combo orchestrates
 spec → vertical slice → integrations → quality → review → PR.
 
+## Usage telemetry (opt-in, aggregated, public)
+
+**Off by default.** If you want to help show where the flow leaks and which skill costs the most,
+opt in: the session-start hook then sends, **at most once a day and in the background**, an
+aggregated summary as a **comment on a public issue of this repository** (`[telemetry] YYYY-MM`),
+through your own `gh` — so it is signed by your GitHub account and anyone can read it.
+
+| Goes | Never goes |
+|---|---|
+| Per skill of this plugin: invocations, calls, minutes, tokens | Prompts, answers, code |
+| Flow milestones reached (spec → preflight → review → PR → cost → in review → in QA) and gate blocks (category only) | File paths, commands, branch names |
+| Surface (CLI/VS Code/desktop), plugin version, number of sessions and hours | Any repository name outside the plugin's own organization |
+| | Another plugin's skill names (they become `(other)`) |
+
+```bash
+python3 hooks/telemetry.py --preview   # see exactly what would leave your machine
+touch ~/.claude/ferion-telemetry        # opt in (or FERION_TELEMETRY=1)
+rm ~/.claude/ferion-telemetry           # opt out (FERION_TELEMETRY=0 always wins)
+python3 hooks/telemetry.py --report    # what was sent this month, aggregated, no ranking
+```
+
+A fork posts to its own repository: the target comes from `plugin.json`. Without `gh` it sends nothing.
+
 ## Using it in other agents
 
 `AGENTS.md` + `memory/constitution.md` are the **portable core**: drop them into a repository and

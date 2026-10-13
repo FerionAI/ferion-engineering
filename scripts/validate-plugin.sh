@@ -176,6 +176,9 @@ bash hooks/check-sources.sh --selftest || exit 1
 # The outdated-plugin warning: numeric comparison and cache reading, no network
 bash hooks/check-version.sh --selftest || exit 1
 
+# Telemetry: off by default, scope (only sessions with the plugin), privacy (no path, no outside repo), cut, reading
+python3 hooks/telemetry.py --selftest || exit 1
+
 # The session cost calculation the `cost` skill writes back to the issue
 python3 skills/cost/scripts/session-cost.py --selftest || exit 1
 python3 skills/cost/scripts/skill-profile.py --selftest || exit 1
