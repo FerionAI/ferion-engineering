@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0](https://github.com/FerionAI/ferion-engineering/compare/ferion-engineering-v0.3.0...ferion-engineering-v0.4.0) (2026-10-13)
+
+
+### Features
+
+* support Codex as a plugin host ([2f154ee](https://github.com/FerionAI/ferion-engineering/commit/2f154eee227a48d5f591e97b4ae96eb1d0d15724))
+* support Codex as a plugin host ([69d4acb](https://github.com/FerionAI/ferion-engineering/commit/69d4acb468ab8ff8c47a6d3daf07d54e0009c7ad)), closes [#14](https://github.com/FerionAI/ferion-engineering/issues/14)
+
 ## [0.3.0](https://github.com/FerionAI/ferion-engineering/compare/ferion-engineering-v0.2.1...ferion-engineering-v0.3.0) (2026-08-31)
 
 
