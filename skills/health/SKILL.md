@@ -59,6 +59,27 @@ A dashboard measures a **named scope**: the repositories belonging to one team, 
 area. Never "everything I can reach" — a report spanning dozens of repositories is a list, not a
 picture, and nobody owns it.
 
+**Three valid origins of a scope, in this order of preference:**
+
+1. **What the person named.** A team, a product, a list of repositories, or **an issue filter**: a
+   label, a milestone, an epic and its children, a GitHub Project view. Whatever they say is the
+   scope — do not "improve" the list on your own.
+2. **The repositories of the open workspace**, when they ask for "my workspace" or "these repos" —
+   the map is the `workspace` skill's (every folder with a `.git`, classified by `context`). **List
+   the repositories in the dashboard**: the list is what makes the scope declared, and a change in it
+   is a change of scope (Rule #1 loses its basis).
+3. **The scopes the team declared** in `config/team-config.md` ("Dashboard scopes"). Do not build
+   another list — use that one. A shared repository can belong to more than one scope on purpose:
+   say which one you are counting it in.
+
+- **A scope from an issue filter is a set of issues; the repositories come after.** Run the query,
+  take the issues and derive the repositories **from the PRs linked to them** (`Closes #N` or the
+  number in the branch). A per-repository metric (quality gate, Core Web Vitals, vulnerabilities) is
+  limited to the repositories that showed up — **say which**, and say how many issues in the filter
+  had no PR (that is traceability telling you the slice is incomplete).
+- **Never sweep the organization.** GitHub is queried **repository by repository from the scope's
+  list**, never "every repository I can see": an organization can hold hundreds, and the result is a
+  list with no owner, not a picture. An empty list or a doubtful scope → ask, do not widen.
 - **Never infer the scope from what happens to be open** in the editor or the session. Rule #1 lives
   or dies on this: `current · was X · Δ` means something only when both runs measured the *same* set.
   A scope that drifts week to week turns every Δ into noise — and the weekly pulse runs on a
@@ -73,6 +94,41 @@ picture, and nobody owns it.
 - **Aggregate, then name the outliers.** A scope of 15 repositories is not 15 sections: it is the
   scope's numbers, with the repositories that left the band named. A repository that never leaves the
   band belongs in the total and nowhere else.
+
+## Rule #4 — an action without its reaction is not a finding
+
+A **process** metric (the action: how much control the team applied) describes **how** the team
+works, not whether it is working. It becomes a criticism only when the **outcome** number it
+protects (the reaction) moved backwards. Criticizing the action alone is demanding ritual: it is how
+"most PRs merged without human review" gets raised as an alert in the same week the QA rejection
+rate fell, uptime rose and the automated review got better — the control changed hands **and the
+outcome improved**.
+
+| Action (what the team did) | Reaction (what it should protect) |
+|---|---|
+| % of PRs without human review · review time | QA rejection · escaped defects · change failure rate |
+| merged with a red CI · PR with no check | change failure rate · incidents · rollbacks |
+| pipeline adoption (`ship`/`preflight`) | bot findings **after preflight** · rework (issues reopened, fixes to just-delivered work) |
+| test coverage · tests that fail when the behavior breaks | reopened bugs · escaped defects |
+| deployment frequency · lead time | MTTR · SLO/uptime · change failure rate |
+| cost per issue (tokens/USD/hours) | issues delivered · rework · lead time |
+
+**What to do with each combination:**
+
+| Action | Reaction | How to report it |
+|---|---|---|
+| out of band | **improved** | **Not a finding.** It is learning: say the control changed and the outcome improved, with both numbers side by side. If you propose anything, it is **removing the redundant control** — never putting it back "just in case". |
+| out of band | **worsened** | A real finding, high priority. The action is the **hypothesis** for the cause, not the proven cause. |
+| within band | **worsened** | A finding about the **control**: it is being followed and is not catching what breaks. Recalibrate the control, not the team. |
+| any | **not measured** | **Do not criticize.** Say the reaction is missing and which query brings it. A finding with no measured reaction is a guess dressed as data. |
+
+- **The target is a starting point, not a verdict.** A band inherited from the industry
+  (`quality/references/metrics.md`) calls attention; what decides is the comparison with the
+  **team's own baseline** and with the reaction.
+- **Do not invent causality.** With no mechanism, write "moved together", not "because of". Two things
+  that improved in the same week may share a cause — or have nothing to do with each other.
+- **"Where to look first" accepts only items with both ends**: the action, the reaction and the Δ of
+  each.
 
 ## Where each metric comes from
 
@@ -122,7 +178,8 @@ aggregation in `references/cost-report.md`:
 ## Process effectiveness (continuous improvement)
 
 Beyond the **outcomes** (DORA/quality), measure whether the **standard is working** — this is what
-closes the loop:
+closes the loop. Everything in this section is **action**: none of these numbers becomes a finding on
+its own, only paired with the reaction it protects (Rule #4).
 
 - **⭐ Automated findings AFTER preflight (target: 0).** This is preflight's central promise: no bot or
   reviewer finds what the machine should have caught. Each case = a **new rule in the preflight
@@ -146,9 +203,11 @@ closes the loop:
 
 ## How to generate it
 
-1. **Settle the scope (Rule #3).** Which named scope is this dashboard about? Not given and the
-   current repository does not clearly belong to one — **ask**. Never fall back to everything
-   reachable.
+1. **Settle the scope (Rule #3).** Which named scope is this dashboard about — a team's declared
+   scope, the workspace's repositories, or an issue filter (label, milestone, epic)? An issue filter:
+   run it first and derive the repositories from the issues' PRs. Not given and the current
+   repository does not clearly belong to one — **ask**. Query GitHub **repository by repository from
+   the list**; never the whole organization.
 2. **Connect first, and ask before you write anything.** Call every source for real — one cheap
    query per MCP, not an inference from the session's tool list (`integrations/references/mcp-catalog.md`).
    A source you never called is not "unavailable": it is unchecked, and reporting it as missing is a
@@ -163,14 +222,18 @@ closes the loop:
    against the previous week: each metric ships as `current · was X · Δ` with the
    improved/worsened/stable mark. **Then read the band** (Rule #2): for anything outside good, open
    what produced it before painting it red, and check whether the same reason produced it last week
-   too.
+   too. **And pull the reaction before calling it a problem** (Rule #4): a process metric out of band
+   becomes a finding only with the Δ of the outcome it protects next to it. A better outcome = not a
+   finding.
 5. **Build the HTML** from `references/dashboard-template.html` — replace the example data with the
    real values and adjust the status colors to the targets. **Stamp the scope** next to the date, and
    compare only against a previous dashboard of the same scope.
 6. **Deliver** it as a file (and, if it is recurring, offer to schedule a weekly task that regenerates
    and sends it).
-7. **Not just numbers:** add 2–3 actionable readings anchored in the **variation** ("change failure
-   rate 9% → 17% after release X → review the canary") — a metric is a conversation, not a scoreboard.
+7. **Not just numbers:** add 2–3 actionable readings anchored in the **variation** and with both ends
+   ("change failure rate 9% → 17% after release X, with deploys at the same pace → review the
+   canary") — a metric is a conversation, not a scoreboard. A reading with no measured reaction does
+   not go in.
 
 ## Recurrence
 
@@ -185,6 +248,7 @@ metrics come from — without it, the next issue loses half its comparison.
 An updated HTML dashboard **stamped with its scope and date**, with DORA / Quality / Observability /
 UX / Security / **Cost & efficiency** / **Process effectiveness** blocks, **each metric with its
 status vs target and vs the previous week**
-(current · was X · Δ), and a short summary of what to look at first, opened by the largest variations —
+(current · was X · Δ), **each process metric paired with the reaction it protects** (Rule #4), and a
+short summary of what to look at first, opened by the largest variations —
 including the **post-preflight findings** (the signal that triggers improving the standard) and the
 **cost capture coverage** (without it, the cost block is a sample).

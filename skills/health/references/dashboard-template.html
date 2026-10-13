@@ -51,13 +51,15 @@
 <header>
   <h1>Engineering health</h1>
   <div class="sub">Week of {{WEEK}} · compared with {{PREVIOUS_WEEK}} · generated {{GENERATED_AT}}</div>
+  <div class="sub">Scope: <b>{{SCOPE}}</b> · repositories measured: {{REPOS}} — the same set as last week
+    (changed? write “no basis — the scope changed” instead of a Δ)</div>
 </header>
 
 <main>
   <section>
     <h2>Where to look first</h2>
     <ul class="first">
-      <li>{{BIGGEST_REGRESSION}} — what changed and the suggested action.</li>
+      <li>{{BIGGEST_REGRESSION}} — what changed and the suggested action (a process metric only with its reaction's Δ next to it).</li>
       <li>{{BIGGEST_IMPROVEMENT}} — what worked, so it can be repeated.</li>
       <li>{{POST_PREFLIGHT_FINDINGS}} automated findings after preflight (target 0) — each one becomes a new checklist rule.</li>
     </ul>
@@ -137,6 +139,19 @@
         <div class="value">{{PIPELINE_ADOPTION}}</div><div class="delta">was {{PIPELINE_ADOPTION_PREV}}</div></div>
       <div class="tile pending"><div class="label">Usage per skill</div>
         <div class="value">pending connection</div></div>
+    </div>
+  </section>
+
+  <section>
+    <!-- Rule #4: a process metric (action) ships only next to the outcome it protects (reaction).
+         Action out of band + reaction improved = "working", not a finding. Reaction not measured =
+         say which query is missing; never criticize the action alone. -->
+    <h2>Process effectiveness — action × reaction</h2>
+    <div class="grid">
+      <div class="tile"><div class="label">{{ACTION}} (action)</div>
+        <div class="value">{{ACTION_VALUE}}</div><div class="delta">was {{ACTION_PREV}}</div>
+        <div class="read"><b>reaction:</b> {{REACTION}} {{REACTION_VALUE}} · was {{REACTION_PREV}}<br>
+        <b>reading:</b> {{WORKING | FINDING | NOT MEASURED}} — {{ONE_SENTENCE_WHY}}</div></div>
     </div>
   </section>
 </main>
