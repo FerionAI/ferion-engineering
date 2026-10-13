@@ -18,6 +18,9 @@ The order does not depend on this prose: `flow-gate.sh` blocks labelling a regis
 FG="bash ${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh"
 ```
 
+> GitLab repo? Same phase with `glab` — `glab mr approve`, `glab mr note`, label `status::in-qa` — and
+> the gate reads the MR's approvals instead of the review decision: `issues/references/forge-commands.md`.
+
 ## 1. Build the queue
 
 1. **Scope:** the tech lead's repositories live in `~/.claude/ferion-profile.md`

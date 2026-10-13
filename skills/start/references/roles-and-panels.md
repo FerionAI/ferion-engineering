@@ -64,6 +64,9 @@ your profile?"* — and move on. Never interrupt the work over it.
 
 ## The panel
 
+> On GitLab the panels run the same queries with `glab` (`issues/references/forge-commands.md`);
+> the hard dependency becomes `glab auth status`.
+
 **Ceiling: 5 lines of state and ONE next step.** A long panel is not read; a panel that turns into a
 report dies. Every line comes from a real source — **no source, no line** (or the line says what is
 missing). Never invent a number: the same rule that protects `preflight`.

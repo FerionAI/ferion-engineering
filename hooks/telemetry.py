@@ -96,7 +96,7 @@ def candidates(projects, sent, current=None):
     return out
 
 
-LABELS = (("status:in-progress", "dev"), ("status:in-review", "in_review"), ("status:in-qa", "in_qa"))
+LABELS = (("in-progress", "dev"), ("in-review", "in_review"), ("in-qa", "in_qa"))   # status: (GitHub) or status:: (GitLab)
 
 
 def milestones_of(name, inp, skill):
@@ -110,15 +110,18 @@ def milestones_of(name, inp, skill):
         found.add("preflight")
     if re.search(r'flow-gate\.sh"? stamp review', cmd):
         found.add("review")
-    if "gh pr create" in cmd or name.endswith(("create_pull_request", "pull_request_create")):
+    if re.search(r"\b(gh +pr|glab +mr) +create\b", cmd) or name.endswith(
+            ("create_pull_request", "pull_request_create", "create_merge_request", "merge_request_create")):
         found.add("pr")
     if "ferion:cost" in text:
         found.add("cost")
-    # Only labels ADDED count: `--remove-label status:in-review --add-label status:in-qa` is in QA.
-    added = ",".join(re.findall(r"--add-label[= ]+[\"']?([^\"'\s]+)", cmd)) if cmd else ""
+    # Only labels ADDED count: `--remove-label status:in-review --add-label status:in-qa` is in QA
+    # (glab adds with `--label` and removes with `--unlabel`).
+    added = ",".join(re.findall(r"--(?:add-)?label[= ]+[\"']?([^\"'\s]+)", cmd)) if cmd else ""
     if name.endswith(("update_issue", "issues_update", "issue_write")):
-        added = ",".join(map(str, inp.get("labels") or []))
-    found |= {m for label, m in LABELS if label in added}
+        labels = inp.get("labels") or inp.get("add_labels") or []
+        added = labels if isinstance(labels, str) else ",".join(map(str, labels))
+    found |= {m for label, m in LABELS if re.search(r"status::?" + label, added)}
     if re.search(r'flow-gate\.sh"? stamp task( +#?\d+){2,}', cmd):
         found.add("group")                      # one PR for several linked issues
     return found
@@ -432,6 +435,11 @@ def selftest():
     t("the opt-in file turns it on", opted_in())
     os.environ["FERION_TELEMETRY"] = "0"
     t("FERION_TELEMETRY=0 wins over the file", not opted_in())
+    m = lambda name, inp: milestones_of(name, inp, None)
+    t("GitLab: glab mr create is the PR milestone", "pr" in m("Bash", {"command": "glab mr create --fill"}))
+    t("GitLab: glab --label status::in-qa is in QA, --unlabel is not",
+      m("Bash", {"command": "glab issue update 7 --unlabel status::in-review --label status::in-qa"}) == {"in_qa"})
+    t("GitLab MCP: a label string counts", "in_review" in m("mcp__gitlab__update_issue", {"labels": "status::in-review"}))
     os.environ.pop("FERION_TELEMETRY")
     if env is not None:
         os.environ["FERION_TELEMETRY"] = env
