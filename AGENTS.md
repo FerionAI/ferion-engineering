@@ -104,6 +104,13 @@ auth/data/input · quality gate green on new code · front end with Nielsen + WC
 Vitals ok · privacy: personal data with legal basis, minimization, retention and no PII in logs,
 when applicable.
 
+## Code review → QA (the tech lead's phase)
+After `in review`, the tech lead owns the PR. The agent may sweep the review queue, review each PR
+against the DoD and the issue's criteria, fix **mechanical** gaps on the PR branch (lint, types,
+naming, an obvious edge-case test) and turn **judgment** calls into review comments — but the
+approval is human: approve only after the tech lead's explicit yes, one PR at a time, and label the
+issue `status:in-qa` only with the PR approved by a person and CI green. (Detail in `approve`.)
+
 ## Release and incidents
 Deploy is separate from release: prefer a flag/canary and have a rollback plan (criterion + mechanics)
 before shipping; data changes go expand/contract; a breaking API contract change needs a new version

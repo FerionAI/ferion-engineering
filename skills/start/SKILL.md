@@ -34,6 +34,7 @@ Every code change goes through 6 steps, **in this order, no skipping and no reor
 | 4 | **local review** | `review` + `preflight` in a **loop until ZERO findings** → `flow-gate.sh stamp review` | `review`, `preflight` |
 | 5 | **PR + cost** | PR open with `Closes #N` **and** tokens/USD/hours recorded on the issue | `integrations`, `cost` |
 | 6 | **in review** | issue labelled `status:in-review`, and said so in the summary | `issues` |
+| → | **in QA** *(tech lead)* | PR approved by a person + green CI, issue labelled `status:in-qa` | `approve` |
 
 This is **not a recommendation**: the hooks block (`exit 2`) editing code before step 2, opening a
 PR before step 4 and labelling for review before step 5 — and they stamp each milestone from what
@@ -73,6 +74,7 @@ any route that touches code enters the flow at step 1 (or wherever `status` says
 | "is it ready for a PR?", "review everything before I push", "make sure it's spotless", "check it didn't hallucinate" | `preflight` (pre-PR gate) |
 | "review this", "is this ready to merge?", "look at my PR" | `review` (Definition of Done; in the pipeline it runs before preflight) |
 | "test cases", "test plan", "report a bug", "what to retest", "exploratory testing", "automate tests", "validate this issue", "can this go to production?" | `qa` (QA kit) |
+| "review the team's PRs", "what is waiting for review", "approve and send to QA", "clear the review column" | `approve` (the tech lead's phase: code review → QA) |
 | "get me into this project", "I don't know this repo", "document what's here", "start a new project" | `onboard` |
 | "what's the standard", "how do we do it here", "what blocks a merge" | `constitution` |
 | "is it secure?", "OWASP", "is the UX good", "accessibility", "quality gate" | `quality` |
