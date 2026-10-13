@@ -4,7 +4,7 @@
 set -u
 H="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)/flow-gate.sh"
 T="${TMPDIR:-/tmp}/ferion-flow-test-$$"
-fails=0
+fails=0; total=0
 rm -rf "$T"; mkdir -p "$T"; (cd "$T" && git init -q . 2>/dev/null)
 
 g() { # <gate|post> <mode> <json payload> -> exit code
@@ -12,7 +12,7 @@ g() { # <gate|post> <mode> <json payload> -> exit code
 }
 s() { (cd "$T" && bash "$H" "$@" >/dev/null 2>&1); }
 check() { # <expected> <got> <description>
-  [ "$1" = "$2" ] || { echo "  x $3 (expected=$1, got=$2)"; fails=$((fails+1)); }
+  total=$((total+1)); [ "$1" = "$2" ] || { echo "  x $3 (expected=$1, got=$2)"; fails=$((fails+1)); }
 }
 
 edit_repo='{"tool_name":"Edit","tool_input":{"file_path":"'"$T"'/src/a.ts"}}'
@@ -88,6 +88,40 @@ printf 'baseline=2000-01-01T00:00:00Z\n' >> "$T/.git/ferion-flow"
 s stamp task 45
 check 0 "$(grep -c '2000-01-01T00:00:00Z' "$T/.git/ferion-flow")" "a new issue clears the previous baseline"
 
+# 8) Group (one PR resolves N linked issues): assuming another issue of the group does not reset the
+#    flow; the PR must name every issue, and each issue needs its own cost before review
+mk() { sed -n "s/^$1=//p" "$T/.git/ferion-flow" | tail -1; }
+as() { printf '{"tool_name":"Bash","tool_input":{"command":"gh issue edit %s --add-assignee @me --add-label status:in-progress"}}' "$1"; }
+rv() { printf '{"tool_name":"Bash","tool_input":{"command":"gh issue edit %s --add-label status:in-review"}}' "$1"; }
+co() { printf '{"tool_name":"Bash","tool_input":{"command":"gh issue comment %s --body ferion:cost tokens=1 usd=1"}}' "$1"; }
+pr_one='{"tool_name":"Bash","tool_input":{"command":"gh pr create --body \"Closes #50\""}}'
+pr_group='{"tool_name":"Bash","tool_input":{"command":"gh pr create --body \"Closes #50, closes #51\""},"tool_response":{"stdout":"https://github.com/acme/app/pull/78"}}'
+s reset
+s stamp task 50 51
+g post issue "$(as 50)" >/dev/null
+g post issue "$(as 51)" >/dev/null
+check "50 51" "$(mk dev)"                       "assuming the 2nd issue of the group does not reset the flow"
+check "" "$(mk in_review)"                      "assuming the 2nd issue is not the 1st one's review milestone"
+s stamp review
+check 2 "$(g gate pr "$pr_one")"                "a PR that misses one issue of the group is blocked"
+check 0 "$(g gate pr "$pr_group")"              "a PR naming every issue of the group passes"
+g post issue "$pr_group" >/dev/null
+g post issue "$(co 50)" >/dev/null
+check 0 "$(g gate review-label "$(rv 50)")"     "review of the issue with its own cost passes"
+check 2 "$(g gate review-label "$(rv 51)")"     "review of a group issue without its own cost is blocked"
+g post issue "$(co 51)" >/dev/null
+check 0 "$(g gate review-label "$(rv 51)")"     "with each issue's cost, the whole group goes to review"
+g post issue "$(rv 50)" >/dev/null
+check "50" "$(mk in_review)"                    "the review milestone is stamped per issue"
+s stamp task 50 51 52
+check "https://github.com/acme/app/pull/78" "$(mk pr)" "extending the group keeps the milestones"
+s stamp dev
+check "50 51 52" "$(mk dev)"                    "stamp dev with no number covers the whole group"
+s stamp task 53
+check "" "$(mk pr)"                             "an issue outside the group opens a new flow"
+printf 'dev=1\n' >>"$T/.git/ferion-flow"
+check 2 "$(g gate review-label "$(rv 53)")"     "state from before groups (dev=1) still covers the whole group"
+
 # 8) GitLab: glab + MRs + scoped status:: labels, the same gates
 L="$T-gitlab"; rm -rf "$L"; mkdir -p "$L/bin"; (cd "$L" && git init -q . && git remote add origin git@gitlab.com:acme/app.git)
 gl() { (cd "$L" && printf '%s' "$3" | PATH="$L/bin:$PATH" bash "$H" "$1" "$2" >/dev/null 2>&1; echo $?); }
@@ -128,7 +162,8 @@ check "https://gitlab.com/acme/app/-/merge_requests/78" "$(sed -n 's/^pr=//p' "$
 # self-managed GitLab on a host that does not say "gitlab": the repo declares its forge
 (cd "$T" && git config ferion.forge gitlab)
 check 1 "$(cd "$T" && bash "$H" reset >/dev/null 2>&1; printf '%s' "$edit_repo" | bash "$H" gate edit 2>&1 >/dev/null | grep -c 'status::in-progress')" "git config ferion.forge gitlab switches the suggested commands"
+(cd "$T" && git config --unset ferion.forge)   # back to GitHub for the sections below
 rm -rf "$L"
 
 rm -rf "$T"
-[ "$fails" -eq 0 ] && echo "OK flow-gate: 41 cases" || { echo "x flow-gate: $fails failure(s)"; exit 1; }
+[ "$fails" -eq 0 ] && echo "OK flow-gate: $total cases" || { echo "x flow-gate: $fails failure(s)"; exit 1; }

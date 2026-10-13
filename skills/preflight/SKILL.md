@@ -124,8 +124,8 @@ this gate exists to catch**: if any step came out red or could not be executed, 
 it, or leave the decision to proceed explicit (human) and record it.
 
 With the stamp: open/update the PR, linked to the issue with `Closes #N` in the body, with the
-standard description and the evidence from the checks. **The gate blocks a PR that references no
-issue** (not in the body, not in the branch): that reference is the only thread tying PR to issue —
+standard description and the evidence from the checks (a group: one `Closes #N` per issue). **The gate
+blocks a PR that misses an issue** (not in the body, not in the branch): that reference is the only thread tying PR to issue —
 without it, cost, lead time and adoption stop being measurable. CI and the quality gate should come out green
 first try — because we already guaranteed it here.
 

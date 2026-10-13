@@ -104,8 +104,10 @@ When you pick up an issue to work on:
    missing, record the questions **as a comment on the issue** (clarify), not only in the chat.
 3. **Run `spec-flow`/`ship`** aimed at the acceptance criteria (the target of the tests — P2): the
    spec/plan are generated and recorded **before** implementing. If the request is a **batch**
-   ("work through my issues in state X"), confirm the scope and take **each** issue through the
-   pipeline — do not code the batch straight through.
+   ("work through my issues in state X"), confirm the scope, put the linked issues in one PR (a
+   group) and take each group or loose issue through the pipeline — do not code the batch straight
+   through. Strong signal: group and say so; weak signal: explain and ask
+   (`start/references/mandatory-flow.md` § Batch).
 4. **Write back:** link the PR to the issue (`Closes #N` in the PR/MR body — the forge closes it on merge),
    comment on progress and decisions, and **move the labels** — the issue reflects reality, it never
    sits in the backlog while the agent works. There are 2 automatic milestones:

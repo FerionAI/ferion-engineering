@@ -40,8 +40,11 @@ instead of looking for another way around.
 
 - **Resume, do not restart.** State lives in the repo (`.git/ferion-flow`), not in the conversation:
   a new session continues from the step it points to, without redoing what is already closed.
-- **One issue at a time.** A new request mid-flow: finish, or record where you stopped — switching
-  issues resets the previous flow.
+- **One PR at a time, which may resolve several issues.** A batch of linked issues becomes a
+  **group** (`stamp task <n> <n>…`). Strong signal: group and move on, saying so in one line. Weak
+  signal: explain the grouping and ask (criteria in `references/mandatory-flow.md` § Batch). A new
+  **unlinked** request mid-flow: finish, or record where you stopped — switching issues resets the
+  previous flow.
 - **Exceptions only when recorded** (hotfix through `incident`, a repo with no issue tracker):
   `flow-gate.sh bypass "<reason>"` and **declare it in the summary**. Never stamp a step that did
   not happen.

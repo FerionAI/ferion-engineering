@@ -13,6 +13,8 @@
 # Commands of BOTH are always recognised; the forge only picks which commands the messages suggest
 # and how CI is read. Detected from the `origin` remote; a self-managed GitLab whose host does not
 # say "gitlab" sets `git config ferion.forge gitlab` (or FERION_FORGE=gitlab).
+# Group (one PR resolves N linked issues): `task` holds the numbers separated by spaces; local review
+# and PR belong to the group, while dev/cost/in_review are per issue (the list of issues that have it).
 set -uo pipefail
 
 cmd=${1:-status}
@@ -68,6 +70,18 @@ RE_MCP_PR='create_pull_request|pull_request_create|create_merge_request|merge_re
 num_after() { # <regex prefix> <text> -> the first issue/PR number that follows it
   grep -oE "$1[[:space:]]+#?[0-9]+" <<<"$2" | head -1 | grep -oE '[0-9]+$'
 }
+issue_no() { # <command> <payload> -> the issue a `gh|glab issue <verb> N` or an MCP call acts on
+  local n; n=$(num_after '(gh|glab)[[:space:]]+issue[[:space:]]+[a-z]+' "$1")
+  [ -n "$n" ] || n=$(grep -oE '"(issue_number|issue_iid)"[[:space:]]*:[[:space:]]*"?[0-9]+' <<<"$2" | head -1 | grep -oE '[0-9]+$')
+  echo "$n"
+}
+has() { case " $1 " in *" $2 "*) ;; *) return 1 ;; esac; }   # has <list> <n>
+em() { # em <milestone> [n]: issue n has the milestone. No n: the milestone exists at all.
+  local v; v=$(get "$1"); [ "$v" = 1 ] && v=$(get task)        # 1 = the whole group (state from before groups)
+  [ -n "$v" ] && { [ -z "${2:-}" ] || has "$v" "$2"; }
+}
+add() { local v; v=$(get "$1"); has "$v" "$2" || put "$1" "${v:+$v }$2"; }
+lacking() { local k; for k in $(get task); do em "$1" "$k" || printf '#%s ' "$k"; done; }   # issues without it
 
 flow_status() {
   local t b
@@ -80,22 +94,26 @@ flow_status() {
     echo "[Flow] no issue in progress in this repo. **Step 1 of 6**: make sure the issue exists (skill \`issues\`) — ask which one, or create it; do not scan the backlog guessing. Editing code before that is blocked."
     return
   fi
-  local m="" next=""
-  m="issue #$t ok"
-  if [ -n "$(get dev)" ]; then m="$m · in progress ok"; else m="$m · in progress MISSING"; next="assume the issue (assignee) and label it \`$L_PROG\` (skill \`issues\`)"; fi
+  local m="" next="" f label="issue **#$t**"
+  [ "$t" = "${t% *}" ] || label="group **#${t// /, #}** (1 PR)"
+  m="issue ok"
+  f=$(lacking dev)
+  if [ -z "$f" ]; then m="$m · in progress ok"; else m="$m · in progress MISSING"; next="assume ${f% } (assignee) and label \`$L_PROG\` (skill \`issues\`)"; fi
   if [ -n "$(get review)" ]; then m="$m · local review ok"; elif [ -z "$next" ]; then next="implement (spec-flow/ship), then close the local review: \`review\` + \`preflight\` until ZERO findings, then \`$self stamp review\`"; fi
-  if [ -n "$(get pr)" ]; then m="$m · $PR ok"; elif [ -z "$next" ]; then next="open the $PR linked to the issue (\`${C_PR}$t\"\`)"; fi
+  if [ -n "$(get pr)" ]; then m="$m · $PR ok"; elif [ -z "$next" ]; then next="open the $PR linked to every issue (\`${C_PR}${t// /, closes #}\"\`)"; fi
   local base; base=$(get baseline)
-  if [ -n "$(get cost)" ]; then m="$m · cost ok"; elif [ -z "$next" ]; then next="record the dev cost on the issue (skill \`cost\`: tokens, USD and hours${base:+ **for this issue**, measured since $base})"; fi
-  if [ -n "$(get in_review)" ]; then m="$m · in review ok"; next="flow closed (QA and deploy are human gates). New issue: \`$self stamp task <number>\`"; elif [ -z "$next" ]; then next="label the issue \`$L_REV\`"; fi
-  echo "[Flow] issue **#$t** — $m. Next step: $next."
+  f=$(lacking cost)
+  if [ -z "$f" ]; then m="$m · cost ok"; elif [ -z "$next" ]; then next="record the dev cost on ${f% } (skill \`cost\`: tokens, USD and hours${base:+ measured since $base}, split equally if it is a group)"; fi
+  f=$(lacking in_review)
+  if [ -z "$f" ]; then m="$m · in review ok"; next="flow closed (QA and deploy are human gates). New issue: \`$self stamp task <number>\`"; elif [ -z "$next" ]; then next="label ${f% } \`$L_REV\`"; fi
+  echo "[Flow] $label — $m. Next step: $next."
 }
 
-missing_for_review() { # what is still missing before the "in review" milestone
+missing_for_review() { # <n> -> what issue n still lacks before its "in review" milestone
   local f=""
   [ -n "$(get review)" ] || f="$f local review (\`review\`+\`preflight\` green, then \`$self stamp review\`) ·"
-  [ -n "$(get pr)" ]     || f="$f $PR open and linked to the issue (\`Closes #$(get task)\`) ·"
-  [ -n "$(get cost)" ]   || f="$f dev cost recorded on the issue (skill \`cost\`: session-cost.py -> \`$C_COMMENT\`) ·"
+  [ -n "$(get pr)" ]     || f="$f $PR open and linked to every issue (\`Closes #N\`) ·"
+  em cost "$1"           || f="$f dev cost recorded on ${1:+#}${1:-the issue} (skill \`cost\`: session-cost.py -> \`$C_COMMENT\`) ·"
   echo "Missing:${f% ·}"
 }
 
@@ -133,14 +151,19 @@ case "$cmd" in
 
   stamp) # stamp <task|dev|review|pr|cost|in_review> [value]
     case "$arg" in
-      task)
-        key=${3:-}
-        [ -n "$key" ] || { echo "usage: $self stamp task <issue-number>" >&2; exit 1; }
-        [ "$key" != "$(get task)" ] && rm -f "$F"   # new issue = new flow (clears milestones and bypass)
-        put task "$key"
+      task) # task <n> [<n>…] — more than one = a group (one PR)
+        shift 2; set -- "${@#\#}"
+        [ $# -gt 0 ] || { echo "usage: $self stamp task <issue-number> [<issue-number>…]" >&2; exit 1; }
+        # a new issue = a new flow (clears milestones and bypass); a group that includes the current issue extends it
+        same=""; for k in "$@"; do has "$(get task)" "$k" && same=1; done
+        [ -n "$same" ] || rm -f "$F"
+        put task "$*"
         # cost baseline: from here on `cost` measures THIS issue only (a session may hold several).
         [ -n "$(get baseline)" ] || put baseline "$(date -u +%Y-%m-%dT%H:%M:%SZ)" ;;
-      dev|review|pr|cost|in_review)
+      dev|cost|in_review) # per issue: no number = the whole group
+        [ -n "$(get task)" ] || { echo "[Flow] register the issue first: \`$self stamp task <number>\`" >&2; exit 1; }
+        if [ -n "${3:-}" ]; then add "$arg" "${3#\#}"; else put "$arg" "$(get task)"; fi ;;
+      review|pr)
         [ -n "$(get task)" ] || { echo "[Flow] register the issue first: \`$self stamp task <number>\`" >&2; exit 1; }
         put "$arg" "${3:-1}" ;;
       *) echo "usage: $self stamp <task|dev|review|pr|cost|in_review> [value]" >&2; exit 1 ;;
@@ -198,23 +221,25 @@ case "$cmd" in
         # A PR nobody can trace back to an issue is a PR nobody can measure later (cost, lead time, adoption).
         # Match the whole payload, not the extracted command: escaped quotes in --title truncate the value.
         t=$(get task); branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
-        [ -z "$t" ] || bypassed || grep -qE "#$t([^0-9]|$)" <<<"$payload" || grep -qE "(^|[^0-9])$t([^0-9]|$)" <<<"$branch" || block \
-          "opening a $PR that does not reference issue #$t (not in the body, not in the branch)." \
-          "Link it in the body: \`${C_PR}$t\" …\` (or name the branch \`<type>/$t-<slug>\`)." \
+        none=""; for k in $t; do
+          grep -qE "#$k([^0-9]|$)" <<<"$payload" || grep -qE "(^|[^0-9])$k([^0-9]|$)" <<<"$branch" || none="$none #$k"
+        done
+        [ -z "$none" ] || bypassed || block \
+          "opening a $PR that does not reference${none} (not in the title/body, not in the branch)." \
+          "Link every issue in the body: \`${C_PR}${t// /, closes #}\" …\` (or name the branch \`<type>/${t%% *}-<slug>\` and link the rest in the body)." \
           "That reference is the only thread tying $PR to issue: without it, cost, lead time and pipeline adoption stop being measurable." ;;
 
       review-label)
         cmdline=$(cmd_of "$payload")
         body="$cmdline$payload"
         grep -qE 'status::?in-review' <<<"$body" || exit 0
-        n=$(num_after "$RE_ISSUE_EDIT" "$cmdline")
-        [ -z "$n" ] && n=$(val issue_number "$payload"); [ -z "$n" ] && n=$(val issue_iid "$payload")
+        n=$(issue_no "$cmdline" "$payload")
         t=$(get task)
-        [ -z "$t" ] || [ -z "$n" ] || [ "$n" = "$t" ] || exit 0   # another issue: not this flow
-        if [ -n "$(get dev)" ]; then
-          bypassed || { [ -n "$(get review)" ] && [ -n "$(get pr)" ] && [ -n "$(get cost)" ]; } || block \
-            "moving the issue to review with the milestone half done." \
-            "$(missing_for_review)" \
+        [ -z "$t" ] || [ -z "$n" ] || has "$t" "$n" || exit 0   # an issue outside the group: not this flow
+        if em dev "$n"; then                                    # dev already happened => this is its in-review milestone
+          bypassed || { [ -n "$(get review)" ] && [ -n "$(get pr)" ] && em cost "$n"; } || block \
+            "moving ${n:+#}${n:-the issue} to review with the milestone half done." \
+            "$(missing_for_review "$n")" \
             "Is this a DIFFERENT move (status regression, manual correction)? \`$self bypass \"out-of-flow move: <reason>\"\`."
           # The gate blocks the PR from OPENING; here it looks again: review with a red CI is guaranteed rework.
           bypassed || ! ci_red "$(get pr)" || block \
@@ -239,18 +264,19 @@ case "$cmd" in
       [ -n "$n" ] && { "$0" stamp task "$n" >/dev/null; changed=1; }
     fi
 
-    # Issue assumed: assignee and/or the in-progress label
-    if grep -qE "$RE_ISSUE_EDIT" <<<"$cmdline" && grep -qE '\-\-(add-)?assignee|status::?in-progress' <<<"$cmdline"; then
-      n=$(num_after "$RE_ISSUE_EDIT" "$cmdline")
-      [ -n "$n" ] && { [ "$n" = "$(get task)" ] || "$0" stamp task "$n" >/dev/null; put dev 1; changed=1; }
-    elif grep -qE 'status::?in-progress' <<<"$payload" && grep -qE 'update_issue|issues_update' <<<"$payload"; then
-      n=$(val issue_number "$payload"); [ -n "$n" ] || n=$(val issue_iid "$payload"); [ -n "$n" ] || n=$(get task)
-      [ -n "$n" ] && { [ "$n" = "$(get task)" ] || "$0" stamp task "$n" >/dev/null; put dev 1; changed=1; }
+    # The issue this call acted on; unnamed with a single-issue flow, it can only be that one
+    n=$(issue_no "$cmdline" "$payload"); t=$(get task)
+    [ -n "$n" ] || [ "$t" != "${t% *}" ] || n=$t
+
+    # Issue assumed: assignee and/or the in-progress label (an issue outside the group = a new flow)
+    if { grep -qE "$RE_ISSUE_EDIT" <<<"$cmdline" && grep -qE '\-\-(add-)?assignee|status::?in-progress' <<<"$cmdline"; } ||
+       { grep -qE 'status::?in-progress' <<<"$payload" && grep -qE 'update_issue|issues_update' <<<"$payload"; }; then
+      [ -n "$n" ] && { has "$(get task)" "$n" || "$0" stamp task "$n" >/dev/null; add dev "$n"; changed=1; }
     fi
 
-    # Dev cost recorded on the issue (the marker is what makes it machine-readable)
-    if grep -q 'ferion:cost' <<<"$payload" && [ -n "$(get task)" ]; then
-      put cost 1; changed=1
+    # Dev cost recorded on the issue (the marker is what makes it machine-readable), per issue
+    if grep -q 'ferion:cost' <<<"$payload" && [ -n "$n" ] && has "$(get task)" "$n"; then
+      add cost "$n"; changed=1
     fi
 
     # PR / MR opened
@@ -260,9 +286,9 @@ case "$cmd" in
       [ -n "$(get task)" ] && { put pr "${ref:-1}"; changed=1; }
     fi
 
-    # Issue labelled for review (the last milestone)
-    if grep -qE 'status::?in-review' <<<"$payload" && [ -n "$(get dev)" ]; then
-      put in_review 1; changed=1
+    # Issue labelled for review (the last milestone), per issue
+    if grep -qE 'status::?in-review' <<<"$payload" && [ -n "$n" ] && has "$(get task)" "$n" && em dev "$n"; then
+      add in_review "$n"; changed=1
     fi
 
     [ "$changed" = 1 ] && flow_status

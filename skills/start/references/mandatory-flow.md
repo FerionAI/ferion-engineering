@@ -12,7 +12,7 @@ that touches code) operates on top of it.
 | 2 | **in progress** | the issue has an **owner** (assignee = you) and the `status:in-progress` label | `gh issue edit --add-assignee/--add-label` (auto) or `stamp dev` |
 | 3 | **implement** | spec/plan in `specs/<feature>/` + code as a vertical slice with tests | — (this is the work) |
 | 4 | **local review** | `review` (DoD) + `preflight` (real tools + anti-hallucination) in a **loop until zero findings** | `stamp review` (only the agent knows) |
-| 5 | **PR + cost** | PR open with `Closes #N` **and** tokens/USD/hours recorded on the issue | `gh pr create` and `gh issue comment` with the cost marker (auto) |
+| 5 | **PR + cost** | PR open with `Closes #N` **for every issue** **and** tokens/USD/hours recorded on each issue | `gh pr create` and `gh issue comment` with the cost marker (auto) |
 | 6 | **in review** | issue labelled `status:in-review`, **with the PR's CI green**, and said so in the summary | `gh issue edit --add-label` (auto) |
 
 From merge onward, humans move things (QA, deploy) — the agent has no reliable signal and does not
@@ -33,8 +33,8 @@ only decides which commands it suggests and how it reads CI — the MR's head pi
 |---|---|---|
 | `Write`/`Edit`/`MultiEdit`/`NotebookEdit` on a repo file | step 2 | code with no assumed issue |
 | `Bash` that writes into the repo (`>`, `>>`, `sed -i`, `tee`, `git apply`, `patch`) | step 2 | the same thing, through the back door |
-| `gh pr create` / `glab mr create` / the MCP equivalent | step 4 | a PR without the local review closed · a PR **that references no issue** in the body or the branch |
-| labelling `status:in-review` (with step 2 done) | steps 4+5 | moving to review without the PR **and** the cost · labelling with a **red CI check** on the PR (the hook reads `gh pr checks` or the MR's head pipeline via `glab`; with no CLI/no network it does not block) |
+| `gh pr create` / `glab mr create` / the MCP equivalent | step 4 | a PR without the local review closed · a PR **that misses an issue** (of the group) in the title/body and the branch |
+| labelling `status:in-review` (with step 2 done **on that issue**) | steps 4+5 | moving to review without the PR **and** the cost **of that issue** · labelling with a **red CI check** on the PR (the hook reads `gh pr checks` or the MR's head pipeline via `glab`; with no CLI/no network it does not block) |
 
 Outside a git repository, and for files outside the repo root (scratch, `/tmp`), **nothing is
 blocked** — there is no delivery there to protect.
@@ -50,6 +50,8 @@ came out green; declaring it without running is the same hallucination preflight
 bash <plugin>/hooks/flow-gate.sh status            # where the flow is and what the next step is
 bash <plugin>/hooks/flow-gate.sh stamp task 123    # a new issue = a new flow (clears milestones and bypass,
                                                    #   and opens this issue's cost baseline)
+bash <plugin>/hooks/flow-gate.sh stamp task 12 13  # a group: one PR for both (§ Batch). Naming the
+                                                   #   current issue extends the group without clearing it
 bash <plugin>/hooks/flow-gate.sh stamp dev         # issue assumed outside the agent
 bash <plugin>/hooks/flow-gate.sh stamp review      # preflight came out green
 bash <plugin>/hooks/flow-gate.sh bypass "<reason>" # recorded exception (see below)
@@ -61,6 +63,31 @@ bash <plugin>/hooks/flow-gate.sh reset             # back to the flow (ends the 
 New session, compacted context, a person coming back two days later: the state lives in the repo,
 not in the conversation. **Read `status` and continue from the step it points to.** Do not redo a
 closed step (do not recreate the issue, do not re-apply a label) and do not jump ahead.
+
+## Batch — one PR for what is linked
+
+"Take these 4 issues" means neither one at a time nor all at once. Linked issues become a **group**:
+one branch, one spec, one local review and one PR. Unlinked ones go one at a time, each with its own
+PR. The strength of the signal decides:
+
+| Signal | When | What the agent does |
+|---|---|---|
+| **Strong** | a dependency between them (one blocked by the other, a task list tying them); one does not compile or test without the other; they touch the same function or screen (separate PRs would conflict and redo work); the person asked for "one PR" | groups and moves on, saying in **one line** which group and why |
+| **Weak** | same epic, same module or a similar theme, but each can ship on its own | explains the grouping (which issues, why, estimated size) and **asks** |
+| **Never groups** | different repositories (that is `workspace`: one PR per repo); an estimated total well past ~400 lines (P3); one of them is a hotfix (`incident`) | one at a time |
+
+Group mechanics:
+- `stamp task 12 13 14`. Assuming any issue of the group clears nothing.
+- The PR names **every** issue (`Closes #12, closes #13, closes #14` in the body); the branch carries the first.
+- Each issue records **its own** cost before it is labelled for review. The group's cost is measured
+  once and split equally across the issues (`cost`), and the comment on each one says so.
+- Found out midway that another issue belongs: `stamp task <the current ones> <the new one>` extends
+  the group without losing a milestone. The diff grew past P3 midway: say so and propose splitting
+  before the PR.
+
+Unlinked issues of the same batch go one at a time: once one is labelled `in review`, the next starts
+without asking again (the batch scope was already confirmed). To run them in parallel, use one
+session per worktree, since each worktree has its own flow state.
 
 ## Exceptions — the only honest way out of the flow
 
