@@ -1,8 +1,9 @@
 # Contributing
 
 Thanks for wanting to improve this standard. This repository is the **source of truth** of an
-engineering standard shipped two ways: a Claude Code plugin, and a portable core
-(`AGENTS.md` + `memory/constitution.md`) for Cursor/Gemini/Codex. See
+engineering standard shipped two ways: a plugin for Claude Code and Codex (one tree, two manifests:
+`.claude-plugin/` and `.codex-plugin/`), and a portable core (`AGENTS.md` +
+`memory/constitution.md`) for Cursor/Gemini. See
 `docs/multi-llm-distribution.md`.
 
 ## Layout

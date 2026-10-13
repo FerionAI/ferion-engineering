@@ -110,10 +110,13 @@ cause and write a **blameless postmortem** with action items tracked as issues. 
 ## Fidelity across LLMs
 This file + `memory/constitution.md` are the **portable core**: they give any agent the principles
 (P1–P8), the Definition of Ready/Done and the spec-driven process — enough to work **consistently
-with the standard**. In Claude, the skills deliver the full operational playbooks; outside Claude
-(Cursor/Gemini/Codex), skill names are conceptual pointers — apply the principles directly, and for
-deeper detail (per-language conventions, OWASP checklists) read the `skills/*/references/` files as
-plain markdown. **Fidelity: Claude = complete; others = principles + process.**
+with the standard**. In Claude and Codex (the plugin), the skills deliver the full operational
+playbooks and the hooks enforce the flow; elsewhere (Cursor/Gemini), skill names are conceptual
+pointers — apply the principles directly, and for deeper detail (per-language conventions, OWASP
+checklists) read the `skills/*/references/` files as plain markdown. **Fidelity: Claude/Codex =
+complete; others = principles + process.**
+`${CLAUDE_PLUGIN_ROOT}` in a skill means the plugin root; if your agent does not expand it, it is
+the folder two levels above that skill's `SKILL.md`.
 
 ## When a request conflicts with a principle
 Do not comply silently. Name the conflict and propose the path that respects the standard.

@@ -4,8 +4,9 @@
 > where the last one stopped, without depending on chat history. Keep it short and current.
 
 ## What this repository is
-The **source of truth of an engineering standard** — a Claude Code plugin plus a portable core
-(`AGENTS.md` + `memory/constitution.md`) for Cursor/Gemini/Codex.
+The **source of truth of an engineering standard** — one plugin for Claude Code **and Codex**
+(`.claude-plugin/` + `.codex-plugin/`, same skills and hooks) plus a portable core
+(`AGENTS.md` + `memory/constitution.md`) for Cursor/Gemini.
 **Current version: 0.3.0, 25 skills.** <!-- x-release-please-version -->
 Covers the full cycle (idea to merge) for PM, QA and dev.
 
@@ -23,6 +24,9 @@ Covers the full cycle (idea to merge) for PM, QA and dev.
 - Any relevant change: **SemVer bump** in `.claude-plugin/plugin.json` + a `CHANGELOG.md` entry.
 - Each skill = `skills/<name>/SKILL.md` (frontmatter `name` = folder name) + `references/` for the
   detail (progressive disclosure, token economy — P8).
+- Hooks must work in both hosts: Claude sends `Edit`/`Write` with `file_path`, Codex sends
+  `apply_patch` with the paths in the patch headers (`flow-gate.sh` handles both; cover new cases
+  in `hooks/flow-gate.test.sh`). Codex manifest version is bumped by release-please.
 - Validate before committing: `sh scripts/validate-plugin.sh` (manifests, frontmatter, refs,
   constitution sync, playbook index, hook tests, leak check).
 
