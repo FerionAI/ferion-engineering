@@ -173,6 +173,9 @@ sh hooks/flow-gate.test.sh || exit 1
 # The source gate: what it calls configured, missing, or impossible to check from a shell
 bash hooks/check-sources.sh --selftest || exit 1
 
+# The outdated-plugin warning: numeric comparison and cache reading, no network
+bash hooks/check-version.sh --selftest || exit 1
+
 # The session cost calculation the `cost` skill writes back to the issue
 python3 skills/cost/scripts/session-cost.py --selftest || exit 1
 python3 skills/cost/scripts/skill-profile.py --selftest || exit 1

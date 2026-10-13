@@ -54,8 +54,34 @@ Add the official MCP for whatever your team already uses. The pattern in `.mcp.j
 - **Interactively-authenticated servers** (OAuth connectors) may be unavailable in headless or
   scheduled runs. Do not build a required step on one.
 
-## Checking what is available
+## Is it working? Ask, do not assume
 
-Ask the agent what MCP tools it can see rather than assuming from the config file — a server can be
-configured and not authorized. When a skill needs one and it is missing, the right response is to say
-so and offer `setup`, not to work around it silently.
+"Configured", "connected" and "working" are three different things, and the distance between them is
+where a report comes out with holes:
+
+```bash
+bash ${CLAUDE_PLUGIN_ROOT}/hooks/check-sources.sh live     # real health check: who answers, who fails, and the fix
+bash ${CLAUDE_PLUGIN_ROOT}/hooks/check-sources.sh banner   # credential presence only (what runs at session start, no network)
+```
+
+`live` runs `claude mcp list` and turns each state into an action. It exits **1** when a server
+fails — usable as a gate before a pilot or a `health` report. When a skill needs a source and it is
+missing, the right response is to say so and offer `setup`, not to work around it silently.
+
+**Connected is not working:** some servers (analytics ones especially) connect with no credential at
+all and only break on the first query. That is why `banner` (an env var is present) and `live` (the
+handshake) complement each other — neither alone answers the question.
+
+The errors lie about their cause, so read them through `live`:
+
+- **`HTTP 400: Authorization header is badly formatted`** looks like a server bug and is a **missing
+  credential**: the `${VAR}` in the header expanded to nothing.
+- **`does not support dynamic client registration`** means the endpoint does not do OAuth — removing
+  the header never fixes it; the token is mandatory. For the `github` server shipped here, the token
+  `gh` already holds works: `export GITHUB_PAT=$(gh auth token)` in your shell profile.
+- **`CONNECTION_CLOSED`** on a server run through Docker is the local process not starting: check the
+  daemon (`docker info`), the active Docker context, and — on Linux — that your user's `docker` group
+  membership is active (it only applies from the next login).
+- **An env var set now does not apply to the open session:** servers start with the session — reopen.
+- **A duplicated server does not help:** when the same MCP comes from the plugin and from a project's
+  `.mcp.json`, approving both just opens two connections to the same thing. Pick one.
