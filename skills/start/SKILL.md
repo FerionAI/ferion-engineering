@@ -34,6 +34,7 @@ Every code change goes through 6 steps, **in this order, no skipping and no reor
 | 4 | **local review** | `review` + `preflight` in a **loop until ZERO findings** → `flow-gate.sh stamp review` | `review`, `preflight` |
 | 5 | **PR + cost** | PR open with `Closes #N` **and** tokens/USD/hours recorded on the issue | `integrations`, `cost` |
 | 6 | **in review** | issue labelled `status:in-review`, and said so in the summary | `issues` |
+| → | **in QA** *(tech lead)* | PR approved by a person + green CI, issue labelled `status:in-qa` | `approve` |
 
 This is **not a recommendation**: the hooks block (`exit 2`) editing code before step 2, opening a
 PR before step 4 and labelling for review before step 5 — and they stamp each milestone from what
@@ -54,6 +55,21 @@ instead of looking for another way around.
 
 > Full mechanics (gates, stamps, degradation, how to leave the flow): `references/mandatory-flow.md`.
 
+## Before routing: who you are talking to
+
+The role **restricts nothing** — anyone runs any skill. It only decides **what you offer first** and
+the panel that opens the session. Resolve it in this order and **never guess in silence**:
+
+1. `~/.claude/ferion-profile.md` with `confirmed: true` → use it (a user file, never a repo file).
+2. a role stated in the request ("I'm QA and I want…") → use it **and record it**.
+3. **converging** environment signals → **propose one option** ("looks like you are a dev — right?").
+4. diverging or no signals → **open question** (pm / qa / dev / tech-lead), record the answer.
+
+With the role resolved, show its **panel**: at most **5 lines of state and ONE next step**, each line
+from a real source. If `gh` is not authenticated, **do not build a panel** — say what is missing and
+offer `setup` (the same "do not fake green" as `preflight`). Who uses which skill: `../ROLES.md`.
+Mechanics, signals, the file format and the 4 panels: `references/roles-and-panels.md`.
+
 ## How to route (intent → path)
 
 Read the intent and follow the route. Load the matching skill and follow it. If the request combines
@@ -67,12 +83,16 @@ any route that touches code enters the flow at step 1 (or wherever `status` says
 | "understand the user", "what does the data say", "which problem to solve", "is it worth building", "test with a user", "did the flow work?" | `discovery` (design thinking: empathize/ideate/test) |
 | "look at the issues", "what's in review / in the sprint / in the backlog", "take issue #123", "what was asked here" | `issues` (issues are the source of truth) |
 | "create/build a feature", "implement X", "do this from scratch" | **ship** (idea→PR pipeline) — starting from the issue, or `spec-flow` if it is only a spec |
-| "fix a bug", "it's broken" | `integrations` (observability investigates) + `spec-flow` (fix the root cause, not the symptom) |
+| "fix a bug", "it's broken", "found a defect", "reproduce this" | `bug` (bug → scenario → **red test** → fix; investigates with `integrations`/observability and updates the existing spec) |
+| "automate this scenario", "generate the test for checkout-014", "turn this test case into a spec" | `qa-spec` (catalog scenario → automated spec, with a mutation proof) |
+| "test data", "factory", "trait", "test-data endpoint" | `test-data` (factories with domain traits; never preexisting data) |
+| "test strategy", "at which level do I test this", "the epic's test DoR", "test pyramid" | `test-strategy` (levels L0–L4 decided at refinement) |
 | "production is down", "error in production", "open an incident", "postmortem" | `incident` (response + postmortem; mitigate through `release`) |
 | "ship it / deploy", "put it in production", "canary/rollout", "rollback", "feature flag", "cut a release" | `release` (shipping to production safely) |
 | "is it ready for a PR?", "review everything before I push", "make sure it's spotless", "check it didn't hallucinate" | `preflight` (pre-PR gate) |
 | "review this", "is this ready to merge?", "look at my PR" | `review` (Definition of Done; in the pipeline it runs before preflight) |
 | "test cases", "test plan", "report a bug", "what to retest", "exploratory testing", "automate tests", "validate this issue", "can this go to production?" | `qa` (QA kit) |
+| "review the team's PRs", "what is waiting for review", "approve and send to QA", "clear the review column" | `approve` (the tech lead's phase: code review → QA) |
 | "get me into this project", "I don't know this repo", "document what's here", "start a new project" | `onboard` |
 | "what's the standard", "how do we do it here", "what blocks a merge" | `constitution` |
 | "is it secure?", "OWASP", "is the UX good", "accessibility", "quality gate" | `quality` |

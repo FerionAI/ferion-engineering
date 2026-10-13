@@ -4,7 +4,7 @@ An opinionated engineering standard packaged as a **Claude Code and Codex plugin
 a team's good practices, and per-repository context — with **automatic onboarding** and, above all,
 **a development flow that is enforced by hooks instead of described in prose**.
 
-> **Status:** `0.5.0`<!-- x-release-please-version --> — 29 skills, 90 playbooks. Covers the full
+> **Status:** `0.5.0`<!-- x-release-please-version --> — 30 skills, 92 playbooks. Covers the full
 > cycle from **idea to merge** for PM, QA and dev. Everything team-specific comes from your **team
 > config**: run `setup` once and the team is configured; run `onboard` in a real repository and it
 > fills the context from the code.
@@ -28,7 +28,7 @@ So the process here is **mechanical, not textual**:
   restarting.
 - The only way around it is an explicit `bypass "<reason>"` — recorded, and declared in the summary.
 
-Everything else in this plugin — the constitution, the 29 skills, the playbooks — is what makes
+Everything else in this plugin — the constitution, the 30 skills, the playbooks — is what makes
 each of those steps worth taking.
 
 ## Requirements
@@ -49,12 +49,17 @@ This repository is a **Claude Code marketplace**:
 ```
 
 Reopen the session to load it. Confirm with `/plugin list` (`ferion-engineering@ferion` · enabled) —
-the session-start hook appears and the skills become available without a prefix (e.g. `/start`,
-`/ship`, `/preflight`). To update:
+the session-start hook appears and the skills become available as `/ferion-engineering:<skill>`
+(e.g. `/ferion-engineering:start`) — or just describe what you want, which works everywhere. To
+update (the session-start hook tells you when you are behind):
 
 ```bash
 /plugin marketplace update ferion && /plugin update ferion-engineering
 ```
+
+**Claude Desktop / Cowork** fetches the marketplace differently, and a private fork needs one extra
+setting: [docs/claude-desktop-install.md](docs/claude-desktop-install.md). What is checked before each
+release, and what only a real install proves: [READINESS.md](READINESS.md).
 
 ### Codex
 
@@ -99,7 +104,7 @@ bash hooks/flow-gate.sh status
 | Component | Type | What it is for |
 |---|---|---|
 | `setup` | Skill | **Guided configuration, no code** — connects tooling and collects the standard through simple questions (designed for PMs and QAs too). |
-| `start` | Skill | **Natural-language entry point** — understands the request in plain language and routes it, without anyone learning skill names. |
+| `start` | Skill | **Natural-language entry point** — understands the request in plain language and routes it, without anyone learning skill names. Opens with a short panel for the person's role (PM, QA, dev, tech lead) — the role orders the offer, it never restricts (`skills/ROLES.md`). |
 | `ship` | Skill | **Idea-to-PR combo** — orchestrates spec → vertical slice → integrations → quality → review → PR. |
 | `spec-flow` | Skill | Spec-driven flow (specify → clarify → plan → tasks → implement → analyze) anchored in the standard. |
 | `issues` | Skill | GitHub or GitLab issues as the source of truth: read from the issue, write back to it, `Closes #N` closes the loop. |
@@ -107,6 +112,7 @@ bash hooks/flow-gate.sh status
 | `discovery` | Skill | **Design thinking around the pipeline** — empathize (analytics → brief), ideate (diverge/converge), test (usability + post-ship behavioral validation). |
 | `preflight` | Skill | **Pre-PR gate** — reviews everything against every rule + runs the real tools + independent anti-hallucination verification, looping until zero automated findings. |
 | `review` | Skill | Human review after preflight: code taste and "does anything look off?". |
+| `approve` | Skill | **The tech lead's phase** — sweeps the issues in review, reviews each PR, fixes the mechanical gaps on the branch, writes the report and, with the tech lead's yes, approves and moves the issue to QA (the gate checks a human approval + CI on GitHub). |
 | `qa` | Skill | QA kit: test cases from the issue, bug reports, risk/regression, exploratory testing, automation, UX/a11y QA, production verification and the approval gate. |
 | `test-strategy` | Skill | **Test DoR at refinement** — PM, QA and dev decide together the epic's scenarios and the level of each (L0–L4) before the code; without it, everything becomes e2e. |
 | `qa-spec` | Skill | Catalog scenario → automated spec at the lowest level that proves the behavior, with an API fixture and a **mutation proof**; refuses to generate if the data trait does not exist. |
@@ -151,6 +157,29 @@ The entry point is **`start`**: describe what you need in plain language — "bu
 "is this secure?", "onboard me into this repo", "how are our metrics", "can this leak personal
 data?" — and it routes you. For a full end-to-end feature, the **`ship`** combo orchestrates
 spec → vertical slice → integrations → quality → review → PR.
+
+## Usage telemetry (opt-in, aggregated, public)
+
+**Off by default.** If you want to help show where the flow leaks and which skill costs the most,
+opt in: the session-start hook then sends, **at most once a day and in the background**, an
+aggregated summary as a **comment on a public issue of this repository** (`[telemetry] YYYY-MM`),
+through your own `gh` — so it is signed by your GitHub account and anyone can read it.
+
+| Goes | Never goes |
+|---|---|
+| Per skill of this plugin: invocations, calls, minutes, tokens | Prompts, answers, code |
+| Flow milestones reached (spec → preflight → review → PR → cost → in review → in QA) and gate blocks (category only) | File paths, commands, branch names |
+| Surface (CLI/VS Code/desktop), plugin version, number of sessions and hours | Any repository name outside the plugin's own organization |
+| | Another plugin's skill names (they become `(other)`) |
+
+```bash
+python3 hooks/telemetry.py --preview   # see exactly what would leave your machine
+touch ~/.claude/ferion-telemetry        # opt in (or FERION_TELEMETRY=1)
+rm ~/.claude/ferion-telemetry           # opt out (FERION_TELEMETRY=0 always wins)
+python3 hooks/telemetry.py --report    # what was sent this month, aggregated, no ranking
+```
+
+A fork posts to its own repository: the target comes from `plugin.json`. Without `gh` it sends nothing.
 
 ## Using it in other agents
 

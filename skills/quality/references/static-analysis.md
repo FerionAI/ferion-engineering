@@ -28,7 +28,9 @@ up from today.
 - **Coverage is necessary, not sufficient.** 100% coverage with assertion-free tests proves nothing;
   `preflight/references/anti-hallucination.md` is the counter-check.
 - **Complexity findings are usually right.** A function the analyzer calls too complex is the function
-  the next person will misread at 3am.
+  the next person will misread at 3am. Defaults: cognitive complexity ≤ **15** per function
+  (SonarQube's own default), cyclomatic ≤ **10–15**. The limit that counts is the analyzer's
+  **server-side quality profile** — never override it in the repository to make the gate pass.
 - **A rule that does not fit the language is a configuration bug, not a quality signal.** Tag rules
   written for English (TODO/FIXME) fire on ordinary words in other languages — Portuguese and Spanish
   `todo` ("all"), French `fin` — and then the gate fails on nearly every PR. When **one** rule

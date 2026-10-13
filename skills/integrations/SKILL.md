@@ -58,7 +58,9 @@ actually uses it — an unconfigured tool degrades with a warning, it never bloc
   the credentials each MCP server in `.mcp.json` declares and, at session start, names the ones
   nobody set. Declaring a server is what puts it under the check — there is no second list to
   maintain. Servers that authenticate in a browser (OAuth) cannot be checked from a hook: it says so
-  instead of pretending, and `/mcp` is the confirmation.
+  instead of pretending. **Ask who answers instead of assuming it answers:** `check-sources.sh live`
+  runs the real health check and names the fix for each failing server
+  (`references/mcp-catalog.md`).
 - **Whether that *blocks* is your team's call, not the standard's.** By default it only reports: a
   team evaluating this standard should not have `health` refuse to run because nobody wired an MCP
   yet. A team that treats its sources as mandatory turns the same script into a gate, adding to the

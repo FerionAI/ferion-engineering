@@ -20,3 +20,5 @@ jobs:
         env:
           LEAK_PATTERNS: ${{ secrets.LEAK_PATTERNS }}
         run: sh scripts/validate-plugin.sh
+      - name: Marketplace readiness (version, declared paths, secrets, packaging)
+        run: sh scripts/check-readiness.sh

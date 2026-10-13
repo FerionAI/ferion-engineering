@@ -7,11 +7,12 @@
 #
 #   check-sources.sh banner            # SessionStart: say what is missing, never block
 #   check-sources.sh gate              # PreToolUse on Skill: block a skill that needs a dead source
-#   check-sources.sh --selftest        # the classifier, no session and no network
+#   check-sources.sh live              # on demand, NEVER in a hook: who actually answers, and the fix
+#   check-sources.sh --selftest        # the classifier and the live reading, no session and no network
 #
-# Deliberately does NO network I/O: this runs at every session start, on a 10s timeout. Presence of
-# a credential is instant and catches the common case (never configured). A credential that exists
-# but is wrong still fails later — that is what `health`'s own connect-first step is for.
+# `banner` and `gate` do NO network I/O: they run at every session start, on a 10s timeout. Presence
+# of a credential is instant and catches the common case (never configured). A credential that exists
+# but is wrong still fails later — that is what `live` is for: it runs the real health check.
 set -u
 
 here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
@@ -62,6 +63,52 @@ classify() {
   done
 }
 
+# --- live diagnosis ---------------------------------------------------------------------------
+# Reads the output of `claude mcp list` and turns each state into an ACTION. Credential presence
+# (classify) says whether it will fail later; the health check says whether it fails now — only the
+# two together answer "is it working?".
+interpret_live() {
+  # The input goes through a file, not stdin: the heredoc below already IS python's stdin.
+  _in=$(mktemp) || return 1
+  cat > "$_in"
+  python3 - "$_in" <<'PY'
+import re, sys
+lines = open(sys.argv[1], encoding="utf-8", errors="replace").read().splitlines()
+failed = pending = ok = 0
+print("MCP servers — who actually answers:")
+for l in lines:
+    m = re.match(r"^([A-Za-z0-9_:.\-]+): (.*?) - ([^\n]+)$", l.strip())
+    if not m:
+        continue
+    name, state = m.group(1), m.group(3).strip()
+    if "Connected" in state:
+        ok += 1; print(f"  ok      {name}"); continue
+    if "Pending approval" in state:
+        pending += 1
+        print(f"  ?       {name} — waiting for approval. Run `claude` and approve it, OR ignore it if the same server already comes with the plugin (a duplicate does not help).")
+        continue
+    failed += 1
+    detail = re.sub(r"^[^A-Za-z0-9]*(Failed to connect\s*[—-]?)?\s*", "", state).strip()
+    if "Authorization header is badly formatted" in detail or "401" in detail or "403" in detail:
+        fix = "credential missing/invalid in the header — set the variable the server declares and reopen the session"
+    elif "Needs authentication" in detail:
+        fix = "an OAuth server nobody authorized yet — open `/mcp` in a session and authenticate it"
+    elif "dynamic client registration" in detail:
+        fix = "this endpoint does NOT do OAuth: it only connects with a token in the header (removing the header does not help)"
+    elif "CONNECTION_CLOSED" in detail or "ENOENT" in detail:
+        fix = ("the local process did not start — for `docker`, check the daemon (`docker info`), the context and the image; "
+               "for `npx`/`uvx`, check the binary")
+    else:
+        fix = "read the error and fix the cause; do not disable the server to make this pass"
+    print(f"  FAILED  {name}\n          error: {detail[:120]}\n          fix:   {fix}")
+print(f"\n{ok} connected · {failed} failed · {pending} waiting for approval")
+if failed:
+    print("A failed server = a skill that reads from it will degrade or block (it does not fake data).")
+sys.exit(1 if failed else 0)
+PY
+  _ec=$?; rm -f "$_in"; return $_ec
+}
+
 # --- commands ---------------------------------------------------------------------------------
 case "${1:-banner}" in
   --selftest)
@@ -90,8 +137,21 @@ JSON
     t oauthy   unverifiable
     t oauthy   unverifiable SELFTEST_TOKEN=abc
     t localy   ok                                  # local, no credential: not an OAuth server
+    # Reading the health check (`live`), with lines in the shape `claude mcp list` prints.
+    live_out=$(printf '%s\n' \
+      "a: https://x/ (HTTP) - ✔ Connected" \
+      "b: https://y/ (HTTP) - ✘ Failed to connect — HTTP 400: bad request: Authorization header is badly formatted" \
+      "c: docker run -i --rm z - ✘ Failed to connect — CONNECTION_CLOSED: Connection closed" \
+      "d: https://w/ (HTTP) - ⏸ Pending approval (run \`claude\` to approve)" \
+      "e: https://v/ (HTTP) - ✘ Failed to connect — Incompatible auth server: does not support dynamic client registration" \
+      "f: https://u/ (HTTP) - ! Needs authentication" \
+      | bash "$0" __interpret); live_ec=$?
+    lt() { printf '%s' "$live_out" | grep -q "$1" || { echo "  x live: missing '$1'"; fails=$((fails + 1)); }; }
+    lt "ok      a"; lt "FAILED  b"; lt "set the variable"; lt "daemon"; lt "does NOT do OAuth"; lt "waiting for approval"; lt "authenticate it"
+    lt "1 connected · 4 failed · 1 waiting"
+    [ "$live_ec" = 1 ] || { echo "  x live: should exit 1 on a failure, exited $live_ec"; fails=$((fails + 1)); }
     [ "$fails" = 0 ] || { echo "x check-sources: $fails selftest failure(s)"; exit 1; }
-    echo "OK check-sources: 8 selftest cases"
+    echo "OK check-sources: 17 selftest cases (credential presence + reading the health check)"
     exit 0 ;;
 
   __classify)  # internal, for the selftest: classify an arbitrary .mcp.json
@@ -136,5 +196,15 @@ print(((d.get("tool_input") or {}).get("skill") or ""))' 2>/dev/null)
     } >&2
     exit 2 ;;
 
-  *) echo "usage: $(basename "$0") <banner|gate|--selftest>" >&2; exit 1 ;;
+  live)
+    # On demand (NEVER in a hook): ask Claude Code itself who actually answers.
+    # `claude mcp list` runs the health check; here its output becomes a diagnosis + a fix per server.
+    command -v claude >/dev/null 2>&1 || { echo "no claude CLI — without it the connection cannot be checked." >&2; exit 1; }
+    timeout 180 claude mcp list 2>&1 | interpret_live
+    exit $? ;;
+
+  __interpret)  # internal, for the selftest: reads `claude mcp list` lines from stdin
+    interpret_live; exit $? ;;
+
+  *) echo "usage: $(basename "$0") <banner|live|gate|--selftest>" >&2; exit 1 ;;
 esac
