@@ -91,6 +91,7 @@ picture, and nobody owns it.
 | **Process effectiveness** | Traceability: % of PRs referencing their issue (body or branch) | GitHub (PR bodies) |
 | **Process effectiveness** | Pipeline adoption (% of PRs through `ship`/`preflight`) | GitHub (PR pattern/checklist) |
 | **Process effectiveness** | Usage per skill · edit acceptance rate | Claude Code analytics / OTel |
+| **QA** | ⭐ % of tests on preexisting data · mutation-proof failure rate · flaky in quarantine · catalog coverage · specs first authored by QA · escaped defects | `preflight/scripts/qa-lint.sh --all` + `scenarios/*.yaml` + git + GitHub issues (`references/qa-metrics.md`) |
 
 ## Cost & efficiency (an explained block, not just tiles)
 

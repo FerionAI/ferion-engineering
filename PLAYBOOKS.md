@@ -4,7 +4,7 @@
 > Playbooks are the detail (`references/`) each skill loads on demand (progressive
 > disclosure, P8). The SKILL.md is the entry point; the "how" lives here.
 
-**89 playbooks** across **26** skills.
+**90 playbooks** across **26** skills.
 
 ## agentic-flow (5)
 
@@ -62,10 +62,11 @@
 - [`references/front-to-back.md`](skills/fullstack/references/front-to-back.md) — A front-end person working in the back end
 - [`references/migrations.md`](skills/fullstack/references/migrations.md) — Writing and reviewing a database migration
 
-## health (2)
+## health (3)
 
 - [`references/cost-report.md`](skills/health/references/cost-report.md) — The cost block in the dashboard — where each number comes from
 - [`references/dashboard-template.html`](skills/health/references/dashboard-template.html) — dashboard-template.html
+- [`references/qa-metrics.md`](skills/health/references/qa-metrics.md) — QA metrics on the dashboard — what shows the suite getting better
 
 ## incident (3)
 
