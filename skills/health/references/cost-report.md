@@ -13,11 +13,17 @@ gh issue list --state closed --search "closed:2026-08-13..2026-08-20" \
 # the cost marker on one issue
 gh api "repos/{owner}/{repo}/issues/<n>/comments" --jq '.[].body' \
   | grep -o 'ferion:cost[^>]*'
-# -> ferion:cost tokens=1403090 usd=2.05 active_h=0.17 wall_h=0.49
+# -> ferion:cost tokens=1403090 usd=2.05 active_h=0.17 wall_h=0.49 requests=85
 ```
 
 Parse the `key=value` pairs. An issue with no marker counts toward the **coverage** denominator — it
-does not silently disappear from the sample.
+does not silently disappear from the sample. Older markers may lack `requests`: report round trips
+over the issues that have it, and say so.
+
+> **A `kind=qa` marker stays out of this block.** It is measured on a different base (only the work of
+> automating a scenario, not a whole session's context re-reads), orders of magnitude apart from the
+> dev cost: adding or comparing the two produces a lying chart. If the dashboard shows QA cost, show it
+> in its own labelled block, with no combined total. A marker with no `kind` is dev.
 
 ## Capture coverage comes first
 

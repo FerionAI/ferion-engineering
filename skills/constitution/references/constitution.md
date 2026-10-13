@@ -115,9 +115,19 @@ Working efficiently with AI is part of the standard, not an extra.
   or accessibility for brevity.
 - **Maximum signal per token.** Progressive disclosure, batched tool calls, never re-read what was
   already read. **Terse answers by default** — high signal, zero filler, no preamble or recap;
-  a report or walkthrough **only when asked** (requested explanation is not debt). Terseness is
-  **not** skipping clarification: ask the essential question (one at a time) whenever something
-  is missing.
+  a report or walkthrough **only when asked** (requested explanation is not debt). **Closing a step
+  is up to 3 lines + the link** (PR/issue): whoever wants the detail asks. Terseness is **not**
+  skipping clarification: ask the essential question whenever something is missing — **one at a
+  time when the answer changes the next question, together when they are independent** (a lone
+  question costs minutes of human waiting).
+- **What costs is the round trip, not the word.** Every call re-reads the whole context, so almost
+  all of an agent's tokens are context re-reads (cache read) and spend is roughly
+  `round trips × context size`; prose for the person is a sliver of the output. So: **batch the
+  checks into one call** (e.g. `preflight.sh`), **do not re-query state a hook already injected**
+  (the session banner carries the flow status), **keep constants in the skill** (script paths, ids)
+  instead of searching for them, and **read the excerpt, not the whole file** (`grep`/`sed -n`
+  before a raw read — whatever enters the context is paid again on every later call). Cutting words
+  improves reading; cutting calls is what cuts the bill.
 - **Model proportional to the task.** Cheap and fast for mechanical work; strong for what needs
   reasoning (architecture, debugging, verification). Start cheap, escalate on demand.
 - **Subagents with cost discipline.** Only when there is real parallelism, context isolation or

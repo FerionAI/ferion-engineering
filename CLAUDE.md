@@ -36,7 +36,7 @@ Entry/setup: `setup` (guided, no code), `start` (NL router), `epic` (PM: epic→
 `discovery` (design thinking), `issues` (source of truth), `ship` (idea→PR), `spec-flow`,
 `preflight` (pre-PR gate).
 Quality: `qa`, `review`, `design-review` (design gate), `quality`, `privacy`, `design-system`.
-Efficiency/tooling: `agentic-flow`, `cost`, `fullstack`, `workspace` (multi-repo), `integrations`.
+Efficiency/tooling: `agentic-flow`, `cost` (per issue + `skill-profile.py`: where the cost lives per skill), `fullstack`, `workspace` (multi-repo), `integrations`.
 Operations/base: `onboard`, `health`, `context`, `constitution`.
 Delivery/production: `release`, `incident`.
 Infra: always-on hooks (`hooks/` — session banner + flow step, edit, commit/PR (blocks AI
@@ -60,6 +60,11 @@ registered (`tl`, skill `approve`) without the PR approved by a human + CI green
   This is what makes the plugin installable by anyone. Hook changes are tested on both forges.
 - The end of the flow is a spotless `preflight` (zero automated findings + independent
   anti-hallucination verification).
+- **Efficiency is round trips, not words** (ADR-0004): almost all tokens are context re-reads, so
+  spend is ~`calls × context` and prose is a sliver of it. Hence `preflight` step 1 is **one call**
+  (`preflight.sh`), the flow `status` is not re-queried (the banner carries it), constants (script
+  paths) live in the skill, and `cost` records `requests`. Terseness still holds — **closing a step
+  = 3 lines + link** — for the reading gain, not the bill.
 - **Flow order is mechanical, not prose.** The pipeline was already written in every skill and the
   agent still skipped and reordered steps. What guarantees the order is the hook, with the state in
   the repo; the skills describe, the gate enforces.

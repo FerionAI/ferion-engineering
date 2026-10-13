@@ -24,15 +24,26 @@ currency as tokens.
 - **Time:** active agent time (API), wall time, and the human lead time (DORA).
 - **Output:** lines, PRs, commits — to relate cost to delivery.
 
-Where the numbers come from — **one command** (see `references/capture.md`):
+Where the numbers come from — **one command, fixed path** (see `references/capture.md`):
 
 ```bash
-python3 <path to this skill>/scripts/session-cost.py
-# {"session":"…","scope":"issue","issue":"123","since":"2026-08-26T15:49:18Z","tokens":138034,"usd":0.1066,…}
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/cost/scripts/session-cost.py
+# {"session":"…","scope":"issue","issue":"123","tokens":138034,"usd":0.1066,"requests":85,…,
+#  "comment":"<!-- ferion:cost tokens=138034 usd=0.1066 active_h=0.17 wall_h=0.49 requests=85 -->\n**Dev cost** …"}
 ```
 
-It resolves the repository's current session, counts tokens and hours in the transcript, and takes the
-USD from `ccusage` (the same source as `/usage`).
+It resolves the repository's current session, counts tokens, round trips and hours in the transcript,
+takes the USD from `ccusage` (the same source as `/usage`) **and returns the comment body ready to post**.
+
+> **Do not go looking** for the script or the marker format — they are here and inside the script.
+> Recording cost is **two calls**: run the script → `gh issue comment <n> --body '<comment>'`. Every
+> extra call spent rediscovering a constant re-reads the whole context (ADR-0004).
+
+**`requests` (round trips) is the number that predicts time and dollars.** Spend is ~`calls × context`
+and almost all tokens are context re-reads; a raw token count does not say where to improve, the call
+count does. It goes into the marker. To see **where** the calls go across skills (not one issue), run
+`python3 ${CLAUDE_PLUGIN_ROOT}/skills/cost/scripts/skill-profile.py` — calls, minutes and tokens per
+skill, from the local transcripts.
 
 **One session can hold several issues — the cost must not become one bucket.** So `flow-gate.sh` writes
 a **baseline** (UTC) into the repo flow state on every new issue, and the script measures **from there
@@ -52,17 +63,18 @@ dev cost closes, the agent is already writing to the issue, and the session stil
 measured. This holds even when the label was not applied through `preflight` (a direct request,
 `ship`) — whoever labels, records. (An extra session later — review fixes — adds on top.)
 
-**How** — a comment with a machine-readable marker:
+**How** — post the script's `comment` as is: the machine-readable marker plus the table. A number
+that is unavailable is already **left out** of the marker (never `null`).
 
 ```bash
-gh issue comment 123 --body '<!-- ferion:cost tokens=1403090 usd=2.05 active_h=0.17 wall_h=0.49 -->
+gh issue comment 123 --body '<!-- ferion:cost tokens=1403090 usd=2.05 active_h=0.17 wall_h=0.49 requests=85 -->
 **Dev cost** (estimated, session `abc123`)
 
-| tokens | USD | active | wall | model |
-|---|---|---|---|---|
-| 1,403,090 | 2.05 | 0.17h | 0.49h | claude-opus-5 |
+| tokens | USD | active | wall | round trips | model |
+|---|---|---|---|---|---|
+| 1,403,090 | 2.05 | 0.17h | 0.49h | 85 | claude-opus-5 |
 
-in 1.2M · out 21k · cache 180k'
+in 1,220,000 · out 21,000 · cache read 160,990 · cache write 1,100'
 ```
 
 Rules:
@@ -71,12 +83,27 @@ Rules:
   is stamped from reality, never from a claim.
 - **Several sessions on the same issue:** read the previous comment and **add to it**, or post a new
   comment and let `health` sum them. Be consistent; say which you did.
+- **Several issues in one PR (a group):** the script measures the group once and splits it (`split: N`):
+  the marker carries 1/N of every number. Post the **same** comment on each issue of the group, so
+  summing the markers gives the group back. The split is equal; if one issue clearly weighed more,
+  say so in the comment.
+- **Never edit a cost comment another process posted** — post your own. Each record being its own
+  comment is what keeps one process from overwriting another's number.
 - **Several issues in the same session:** do not add anything up — the script already cuts at the
   issue's baseline (above). If it says `scope:"session"` where it should say `issue`, the number covers
   the whole session: say that in the comment.
 - **No number** (app flow, `ccusage` unavailable): **do not post a number** — comment what you have
   and flag it in the summary. Never invent a cost.
 - **Never put PII in a cost record** (privacy): issue number and team, not a person's data.
+
+### A cost measured another way (`kind=qa`)
+
+A QA-automation slice — only the work of automating one scenario, measured from when it started
+(`session-cost.py --since=<ISO> --kind=qa`) — goes in **its own comment**, with `kind=qa` in the
+marker. **Never add it to the dev cost or compare the two:** the dev slice counts every context
+re-read of a whole working session, the QA slice only its own work, so they differ by orders of
+magnitude by **method**, not by effort. A "total cost of the issue" adding both is a false number;
+aggregate one kind at a time and say which (a marker with no `kind` is dev).
 
 ## 3. Aggregate and decide (from the issues)
 
@@ -87,8 +114,9 @@ gh issue list --state closed --limit 200 --json number,title,labels
 gh api "repos/{owner}/{repo}/issues/123/comments" --jq '.[].body' | grep -o 'ferion:cost[^>]*'
 ```
 
+- One `kind` at a time (no `kind` = dev; `kind=qa` is a separate series — above).
 - Cost by task type (feature/bug/refactor) and the trend.
-- Tokens per PR; the effect of writing less code (less code → fewer tokens).
+- Tokens and **round trips** per PR; the effect of writing less code (less code → fewer tokens).
 - Feature pricing from the median of similar issues (see `references/efficiency-and-pricing.md`).
 - The `health` dashboard pulls these numbers **from the issues** for its Cost & Efficiency block.
 
