@@ -22,6 +22,13 @@ it answers.
 - **Do not narrate what you are about to do** before doing it. Do it, then say what happened.
 - **Do not re-derive settled facts.** Something established earlier in the conversation stays
   established; re-checking it is a round trip that buys nothing.
+- **Do not re-query state a hook already injected.** The session banner carries the flow status;
+  running `flow-gate.sh status` again re-reads the whole context to show what is already there. Run
+  it only when the banner is missing (`/clear`, a summarized context).
+- **Do not search for constants.** A plugin script's path, a marker's format, a field id: the skill
+  states them. A `find` over the plugin folder is a round trip spent rediscovering a fixed value.
+- **One call for what a script runs in one.** Build, types, lint and tests are `preflight.sh`, not
+  four calls; split only to debug one specific failure.
 
 ## Answering
 
@@ -35,8 +42,12 @@ summary of what they can see in the diff.
 | A 300-word explanation of a 3-line change | The 3-line change |
 | Listing the options you decided against | The decision, with one line of why |
 
-**But terseness is not skipping clarification.** When something essential is missing, ask — one
-question, the one that changes what you build. Saving 200 tokens by guessing and building the wrong
+**Closing a step is up to 3 lines + the link** (PR/issue). Prose is not spread evenly: a small share of
+messages — the end-of-step reports — carries most of the text. Whoever wants the detail asks.
+
+**But terseness is not skipping clarification.** When something essential is missing, ask — **one at
+a time when the answer changes the next question, together when they are independent**. A dumped
+questionnaire is bad, but three independent questions in three rounds cost three human waits. Saving 200 tokens by guessing and building the wrong
 thing costs the whole task (P1).
 
 **And requested explanation is not debt.** If someone asks for a report, a walkthrough or the
@@ -51,6 +62,31 @@ reasoning, give it in full. The rule is against unrequested prose, not against a
 ```
 
 No headers, no bullet lists of things they already know, no "next steps" they did not ask for.
+
+## Where the cost actually goes
+
+Spend is `round trips × context size`, not words. Every call re-sends the whole context, so:
+
+| Where it goes | Order of magnitude |
+|---|---|
+| Context re-reads (cache read) | almost all of the tokens |
+| Thinking | a large share of the output |
+| **Prose for the person** | **around one percent** of the output |
+| Time | split between generating and running tools — and every call pays both |
+
+The practical consequence: **every call avoided saves a whole context re-read**; every paragraph cut
+saves almost nothing in money (it saves reading). Optimize calls first, words second. Do not take
+these proportions on faith — measure your own sessions (below).
+
+## How to measure
+
+- **Round trips per issue** — `session-cost.py` reports `requests`, and it goes into the issue's
+  cost marker (`cost`). It predicts time and dollars better than a raw token count.
+- **Per skill** — `python3 ${CLAUDE_PLUGIN_ROOT}/skills/cost/scripts/skill-profile.py`: calls,
+  minutes and tokens per skill, plus the share of context re-reads and of prose, from the local
+  transcripts. It says **what** to optimize.
+- Fewer tokens per PR (compare before/after on typical tasks), and time to the first useful result
+  (not to the "final report").
 
 ## Model and context
 
