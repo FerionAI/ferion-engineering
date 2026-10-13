@@ -4,6 +4,23 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0](https://github.com/FerionAI/ferion-engineering/compare/ferion-engineering-v0.4.0...ferion-engineering-v0.5.0) (2026-10-13)
+
+
+### Features
+
+* **flow:** linked issues as a group, spec gate and the tech lead's QA gate ([c307393](https://github.com/FerionAI/ferion-engineering/commit/c307393d87eaa43606440f34d1b3ed208d280c09))
+* **flow:** one PR can resolve several linked issues ([57cfbfd](https://github.com/FerionAI/ferion-engineering/commit/57cfbfd5c38d054ff1a534dae6fa15f96acdca37))
+* **flow:** QA label needs the PR approved by a human and CI green ([0ce8f50](https://github.com/FerionAI/ferion-engineering/commit/0ce8f50ee66b7797ad4d2b74afab853d20fdc3e4))
+* **flow:** spec gate on the PR and one session per group of issues ([be86386](https://github.com/FerionAI/ferion-engineering/commit/be863865de8d56f111edcce3c0443b58dc32e1ca))
+* support GitLab as a forge and fix Codex MCP auth ([6c3443f](https://github.com/FerionAI/ferion-engineering/commit/6c3443fe6073b873dbc59b753720b5e78572b8e4))
+* support GitLab as a forge and fix Codex MCP auth ([af60b0e](https://github.com/FerionAI/ferion-engineering/commit/af60b0e6d3196377bfde2717a3cd2f6761b0b9f6)), closes [#17](https://github.com/FerionAI/ferion-engineering/issues/17)
+
+
+### Bug Fixes
+
+* **flow:** read a label move by its destination and refuse placeholder issues ([779b6ca](https://github.com/FerionAI/ferion-engineering/commit/779b6cafb24e18c85b644d73faba4488b52f5d01))
+
 ## [0.4.0](https://github.com/FerionAI/ferion-engineering/compare/ferion-engineering-v0.3.0...ferion-engineering-v0.4.0) (2026-10-13)
 
 
