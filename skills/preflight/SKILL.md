@@ -36,7 +36,20 @@ course while it was cheap — the opposite of the loop.
 
 ## Step 1 — Run the real tools (do not trust "it should pass")
 
-Execute and require green (real commands in `context`):
+**One call** — the script detects the repo's commands, runs them all and brings back a short report
+(only the log tail of a failing step), with the step 1.2 bot check included:
+
+```bash
+bash ${CLAUDE_PLUGIN_ROOT}/skills/preflight/scripts/preflight.sh
+# wrong command? override without editing anything: PREFLIGHT_LINT='pnpm lint' PREFLIGHT_TEST='pnpm test:run' bash …
+```
+
+Run step by step, this takes dozens of round trips, and each one re-reads the whole context (ADR-0004).
+Here the work is the same in **one** call. **Split into separate calls only when debugging one
+specific failure** — then run that command alone.
+
+What step 1 requires (green) — the script covers the first four; static analysis and dependency
+security run with the repo's own tools (real commands in `context`):
 
 - **Build/compilation** — no errors.
 - **Types** — typecheck clean (TS strict / mypy / etc.).
@@ -53,7 +66,7 @@ If any of them fails, fix it before moving on. The numbers come from execution, 
 which are rarely the ones you assume. Find out instead of guessing:
 
 ```bash
-bash ${CLAUDE_PLUGIN_ROOT}/skills/preflight/scripts/pr-bots.sh    # current repo, last 20 PRs
+bash ${CLAUDE_PLUGIN_ROOT}/skills/preflight/scripts/pr-bots.sh    # already runs inside preflight.sh; alone, only to debug
 ```
 
 - **ALIVE bots** = the list the checklist has to anticipate. If one of them keeps flagging something
