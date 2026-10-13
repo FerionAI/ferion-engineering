@@ -7,7 +7,7 @@
 The **source of truth of an engineering standard** — one plugin for Claude Code **and Codex**
 (`.claude-plugin/` + `.codex-plugin/`, same skills and hooks) plus a portable core
 (`AGENTS.md` + `memory/constitution.md`) for Cursor/Gemini.
-**Current version: 0.6.0, 29 skills.** <!-- x-release-please-version -->
+**Current version: 0.6.0, 30 skills.** <!-- x-release-please-version -->
 Covers the full cycle (idea to merge) for PM, QA and dev.
 
 > Careful: **this repo IS the standard/plugin**, not a product app. When editing it, follow
@@ -33,11 +33,11 @@ Covers the full cycle (idea to merge) for PM, QA and dev.
 - Validate before committing: `sh scripts/validate-plugin.sh` (manifests, frontmatter, refs,
   constitution sync, playbook index, hook tests, leak check).
 
-## The 29 skills (quick map)
-Entry/setup: `setup` (guided, no code), `start` (NL router), `epic` (PM: epic→issues),
+## The 30 skills (quick map)
+Entry/setup: `setup` (guided, no code), `start` (NL router **+ role/entry panel**), `epic` (PM: epic→issues),
 `discovery` (design thinking), `issues` (source of truth), `ship` (idea→PR), `spec-flow`,
 `preflight` (pre-PR gate).
-Quality: `qa`, `test-strategy` (test DoR, levels L0–L4), `qa-spec` (scenario→spec + mutation proof), `test-data` (factories/traits), `bug` (red test before the fix), `review`, `design-review` (design gate), `quality`, `privacy`, `design-system`.
+Quality: `approve` (tech lead's phase: sweeps the review queue, fixes the mechanical, report, approves on their yes → QA), `qa`, `test-strategy` (test DoR, levels L0–L4), `qa-spec` (scenario→spec + mutation proof), `test-data` (factories/traits), `bug` (red test before the fix), `review`, `design-review` (design gate), `quality`, `privacy`, `design-system`.
 Efficiency/tooling: `agentic-flow`, `cost` (per issue + `skill-profile.py`: where the cost lives per skill), `fullstack`, `workspace` (multi-repo), `integrations`.
 Operations/base: `onboard`, `health`, `context`, `constitution`.
 Delivery/production: `release`, `incident`.
@@ -89,10 +89,26 @@ registered (`tl`, skill `approve`) without the PR approved by a human + CI green
   (`test-data`) — shipping automation before the factories would produce debt at scale, generated
   by AI. The mutation proof is the test's gate; `preflight/scripts/qa-lint.sh` blocks preexisting
   data and fixed waits (without a lint, they stay a recommendation).
+- **A role orders the offer, it never restricts** (`start`): "many actors" is a discovery problem,
+  not a reason to split the plugin. The role is **per person** (`~/.claude/ferion-profile.md`,
+  outside git), never in `config/team-config.md` — the last person to run `setup` would set everyone's
+  role. A weak signal **proposes**, never assumes; `skills/ROLES.md` is checked in both directions by
+  the build.
+- **Telemetry is opt-in** (ADR-0005): aggregated usage goes to a public issue of this repo only from
+  people who ran `touch ~/.claude/ferion-telemetry` — at most once a day, in the background, numbers
+  only. Opt-out is defensible for an internal plugin whose issue sits in a private repo the team
+  already reads; here the comment is public and signed by the sender, so the default is off. Reading:
+  `python3 hooks/telemetry.py --report`.
+- **The tech lead closes the code review, not the agent** (ADR-0006): a third milestone, `in QA`
+  (skill `approve`). The agent fixes the mechanical gap on the PR branch and turns judgment into
+  comments; the approval comes from the tech lead's account, only after their yes, one PR at a time.
+  The gate checks the PR's real `reviewDecision` on GitHub, not the conversation.
 - Write less code, MCP-first, everything actionable in natural language.
 
 ## Where the rest is
 - `README.md` (overview + component table), `CHANGELOG.md`, `CONTRIBUTING.md`,
   `docs/multi-llm-distribution.md` (governance/distribution).
+- `READINESS.md` + `scripts/check-readiness.sh` (in CI) — what fails silently before someone installs;
+  `docs/claude-desktop-install.md` for the desktop app and private forks.
 - `PLAYBOOKS.md` — **auto-generated** index of the playbooks (`references/`) per skill
   (`scripts/gen-playbooks-index.py`; checked in CI). The gold of the plugin, made visible.
