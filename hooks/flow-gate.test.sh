@@ -231,5 +231,28 @@ check 2 "$(gt gate review-label "$gl_qa")"      "GitLab: approved with a failed 
 echo '{"iid":31,"detailed_merge_status":"requested_changes","head_pipeline":{"status":"success"}}' >"$T/glview"
 check 2 "$(gt gate review-label "$gl_qa")"      "GitLab: status::in-qa with changes requested is blocked"
 
+# 12) Holes found in the field: a placeholder number passed the PR gate; labelling ANOTHER issue (one from
+#     another repo, closed from this session) read as a new dev flow and wiped this one, bypass included;
+#     and the REST/MCP side doors carried the same move past the label matcher
+cmd() { printf '{"tool_name":"Bash","tool_input":{"command":"%s"}}' "$1"; }
+check 1 "$(cd "$T" && bash "$H" stamp task 0 >/dev/null 2>&1; echo $?)"   "a placeholder 0 is not an issue"
+check 1 "$(cd "$T" && bash "$H" stamp task XXX >/dev/null 2>&1; echo $?)" "a placeholder XXX is not an issue"
+s reset; s bypass "standard repo"
+g post issue "$(cmd 'gh issue edit 99 --remove-label status:in-progress --add-label status:in-review')" >/dev/null
+check "standard repo" "$(mk bypass)"            "labelling another issue for review keeps the bypass"
+s reset; s stamp task 81; s stamp dev
+g post issue "$(cmd 'gh issue edit 99 --remove-label status:in-progress --add-label status:in-review')" >/dev/null
+check "81" "$(mk task)"                         "labelling another issue for review keeps the flow"
+g post issue "$(cmd 'gh issue edit 98 --add-assignee octocat')" >/dev/null
+check "81" "$(mk task)"                         "assigning another issue does not start a flow"
+g post issue "$(cmd 'gh issue edit 82 --add-label status:in-progress')" >/dev/null
+check "82" "$(mk task)"                         "moving another issue INTO in-progress opens a new flow"
+check 0 "$(g gate review-label "$(cmd 'gh issue edit 82 --remove-label status:in-review --add-label status:in-progress')")" "removing the review label is not the review move"
+check 2 "$(g gate review-label "$(cmd 'gh api repos/acme/app/issues/82/labels -f labels[]=status:in-review')")" "the REST side door is the same review move"
+mcp_rv='{"tool_name":"mcp__github__issue_write","tool_input":{"method":"update","issue_number":82,"labels":["status:in-review"]}}'
+check 2 "$(g gate review-label "$mcp_rv")"      "the MCP issue_write is the same review move"
+g post issue "$(cmd 'gh api repos/acme/app/issues/82/comments -f body=ferion:cost')" >/dev/null
+check "82" "$(mk cost)"                         "a cost comment through the REST path is stamped on that issue"
+
 rm -rf "$T"
 [ "$fails" -eq 0 ] && echo "OK flow-gate: $total cases" || { echo "x flow-gate: $fails failure(s)"; exit 1; }

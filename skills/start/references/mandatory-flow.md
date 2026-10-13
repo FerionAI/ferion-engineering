@@ -47,6 +47,13 @@ applied, PR opened, cost comment posted) — not from what the agent says it did
 self-declared step is **4** (`stamp review`), because only whoever ran preflight knows whether it
 came out green; declaring it without running is the same hallucination preflight exists to catch.
 
+A label move is read by its **destination**: only a label added **into** `status:in-progress` opens a
+new flow for an issue outside the group. Assigning someone, or labelling another repository's issue
+for review from this session, leaves this repo's flow (and its bypass) alone — but it does not check
+that issue's PR and cost either; that stays with a session in that issue's repo. Removing a label is
+never the review move. The same move through `gh api …/issues/N/labels` or the GitHub MCP is read the
+same way: there is no side door around the gate.
+
 ## Commands (the agent uses these; the person never needs to)
 
 ```bash
@@ -112,8 +119,9 @@ those cases:
    to close.
 3. `reset` (or a new issue) ends the bypass.
 
-**Never** close a step with `stamp` without doing its work. Stamping `review` without running
-preflight is lying to your own team — and the PR's automated reviewer disproves it in five minutes.
+**Never** close a step with `stamp` without doing its work, and never stamp a placeholder issue
+(`stamp task 0` is refused — it would pass the PR gate while linking the PR to nothing). Stamping
+`review` without running preflight is lying to your own team — and the PR's automated reviewer disproves it in five minutes.
 
 ## When the person asks to skip
 

@@ -69,7 +69,7 @@
         ]
       },
       {
-        "matcher": "mcp__.*(update_issue|issues_update)",
+        "matcher": "mcp__.*(update_issue|issues_update|issue_write)",
         "hooks": [
           {
             "type": "command",

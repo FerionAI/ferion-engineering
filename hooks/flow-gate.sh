@@ -78,8 +78,9 @@ RE_MCP_PR='create_pull_request|pull_request_create|create_merge_request|merge_re
 num_after() { # <regex prefix> <text> -> the first issue/PR number that follows it
   grep -oE "$1[[:space:]]+#?[0-9]+" <<<"$2" | head -1 | grep -oE '[0-9]+$'
 }
-issue_no() { # <command> <payload> -> the issue a `gh|glab issue <verb> N` or an MCP call acts on
+issue_no() { # <command> <payload> -> the issue a `gh|glab issue <verb> N`, a REST path (`gh|glab api …/issues/N`) or an MCP call acts on
   local n; n=$(num_after '(gh|glab)[[:space:]]+issue[[:space:]]+[a-z]+' "$1")
+  [ -n "$n" ] || n=$(grep -oE '/issues/[0-9]+' <<<"$1" | head -1 | grep -oE '[0-9]+$')
   [ -n "$n" ] || n=$(grep -oE '"(issue_number|issue_iid)"[[:space:]]*:[[:space:]]*"?[0-9]+' <<<"$2" | head -1 | grep -oE '[0-9]+$')
   echo "$n"
 }
@@ -89,8 +90,8 @@ em() { # em <milestone> [n]: issue n has the milestone. No n: the milestone exis
   [ -n "$v" ] && { [ -z "${2:-}" ] || has "$v" "$2"; }
 }
 add() { local v; v=$(get "$1"); has "$v" "$2" || put "$1" "${v:+$v }$2"; }
-adds() { # adds <label regex> <text>: the call ADDS that label (`--add-label`/glab `--label`, or the label set an MCP call writes)
-  grep -qE -- "--(add-)?label[=[:space:]]+[^[:space:]]*($1)|\"labels\"[^]]*\"($1)\"" <<<"$2"
+adds() { # adds <label regex> <text>: the call ADDS that label (`--add-label`/glab `--label`, REST `labels[]=`/`add_labels=`, or an MCP label set)
+  grep -qE -- "--(add-)?label[=[:space:]]+[^[:space:]]*($1)|labels(\\[\\])?=[^[:space:]]*($1)|\"labels\"[^]]*\"($1)\"" <<<"$2"
 }
 lacking() { local k; for k in $(get task); do em "$1" "$k" || printf '#%s ' "$k"; done; }   # issues without it
 
@@ -211,6 +212,9 @@ case "$cmd" in
       task) # task <n> [<n>…] — more than one = a group (one PR)
         shift 2; set -- "${@#\#}"
         [ $# -gt 0 ] || { echo "usage: $self stamp task <issue-number> [<issue-number>…]" >&2; exit 1; }
+        for k in "$@"; do   # a placeholder (0, 000, XXX) would satisfy the PR gate while linking the PR to nothing
+          grep -qE '^[1-9][0-9]*$' <<<"$k" || { echo "[Flow] \`$k\` is not an issue number: create the issue (skill \`issues\`) instead of a placeholder" >&2; exit 1; }
+        done
         # a new issue = a new flow (clears milestones and bypass); a group that includes the current issue extends it
         same=""; for k in "$@"; do has "$(get task)" "$k" && same=1; done
         [ -n "$same" ] || fresh
@@ -338,14 +342,13 @@ case "$cmd" in
           exit 0
         fi
         [ -n "$gitdir" ] || exit 0
-        grep -qE 'status::?in-review' <<<"$body" || exit 0
+        adds 'status::?in-review' "$body" || exit 0              # removing the label is not the review move
         t=$(get task)
         [ -z "$t" ] || [ -z "$n" ] || has "$t" "$n" || exit 0   # an issue outside the group: not this flow
         if em dev "$n"; then                                    # dev already happened => this is its in-review milestone
           bypassed || { [ -n "$(get review)" ] && [ -n "$(get pr)" ] && em cost "$n"; } || block \
             "moving ${n:+#}${n:-the issue} to review with the milestone half done." \
-            "$(missing_for_review "$n")" \
-            "Is this a DIFFERENT move (status regression, manual correction)? \`$self bypass \"out-of-flow move: <reason>\"\`."
+            "$(missing_for_review "$n")"
           # The gate blocks the PR from OPENING; here it looks again: review with a red CI is guaranteed rework.
           bypassed || ! ci_red "$(get pr)" || block \
             "labelling for review with a failing CI check on $PR $(get pr)." \
@@ -370,7 +373,7 @@ case "$cmd" in
     changed=0
 
     # New issue created (gh/glab print the URL; the MCP returns "number"/"iid": N)
-    if grep -qE '(gh|glab) +issue +create' <<<"$cmdline" || grep -qE '"(create_issue|issues_create)"|create_issue' <<<"$payload"; then
+    if grep -qE '(gh|glab) +issue +create' <<<"$cmdline" || grep -qE '"(create_issue|issues_create)"|create_issue|issue_write"[^}]*"method"[[:space:]]*:[[:space:]]*"create"' <<<"$payload"; then
       n=$(grep -oE '/issues/[0-9]+' <<<"$payload" | head -1 | grep -oE '[0-9]+$')
       [ -n "$n" ] || n=$(grep -oE '"(number|iid)"[[:space:]]*:[[:space:]]*[0-9]+' <<<"$payload" | head -1 | grep -oE '[0-9]+$')
       [ -n "$n" ] && { "$0" stamp task "$n" >/dev/null; changed=1; }
@@ -380,10 +383,12 @@ case "$cmd" in
     n=$(issue_no "$cmdline" "$payload"); t=$(get task)
     [ -n "$n" ] || [ "$t" != "${t% *}" ] || n=$t
 
-    # Issue assumed: assignee and/or the in-progress label (an issue outside the group = a new flow)
-    if { grep -qE "$RE_ISSUE_EDIT" <<<"$cmdline" && grep -qE '\-\-(add-)?assignee|status::?in-progress' <<<"$cmdline"; } ||
-       { grep -qE 'status::?in-progress' <<<"$payload" && grep -qE 'update_issue|issues_update' <<<"$payload"; }; then
-      [ -n "$n" ] && { has "$(get task)" "$n" || "$0" stamp task "$n" >/dev/null; add dev "$n"; changed=1; }
+    # Issue assumed. The move is read by its destination: only a move INTO in-progress opens a flow for
+    # an issue outside the group — assigning someone, or labelling another repo's issue for review from
+    # this session, must not reset this repo's flow (bypass included).
+    if [ -n "$n" ] && { adds 'status::?in-progress' "$cmdline$payload" ||
+         { has "$(get task)" "$n" && grep -qE "$RE_ISSUE_EDIT.*--(add-)?assignee" <<<"$cmdline"; }; }; then
+      has "$(get task)" "$n" || "$0" stamp task "$n" >/dev/null; add dev "$n"; changed=1
     fi
 
     # Dev cost recorded on the issue (the marker is what makes it machine-readable), per issue
@@ -399,7 +404,7 @@ case "$cmd" in
     fi
 
     # Issue labelled for review (the last milestone), per issue
-    if grep -qE 'status::?in-review' <<<"$payload" && [ -n "$n" ] && has "$(get task)" "$n" && em dev "$n"; then
+    if adds 'status::?in-review' "$cmdline$payload" && [ -n "$n" ] && has "$(get task)" "$n" && em dev "$n"; then
       add in_review "$n"; changed=1
     fi
 
