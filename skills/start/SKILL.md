@@ -55,6 +55,21 @@ instead of looking for another way around.
 
 > Full mechanics (gates, stamps, degradation, how to leave the flow): `references/mandatory-flow.md`.
 
+## Before routing: who you are talking to
+
+The role **restricts nothing** — anyone runs any skill. It only decides **what you offer first** and
+the panel that opens the session. Resolve it in this order and **never guess in silence**:
+
+1. `~/.claude/ferion-profile.md` with `confirmed: true` → use it (a user file, never a repo file).
+2. a role stated in the request ("I'm QA and I want…") → use it **and record it**.
+3. **converging** environment signals → **propose one option** ("looks like you are a dev — right?").
+4. diverging or no signals → **open question** (pm / qa / dev / tech-lead), record the answer.
+
+With the role resolved, show its **panel**: at most **5 lines of state and ONE next step**, each line
+from a real source. If `gh` is not authenticated, **do not build a panel** — say what is missing and
+offer `setup` (the same "do not fake green" as `preflight`). Who uses which skill: `../ROLES.md`.
+Mechanics, signals, the file format and the 4 panels: `references/roles-and-panels.md`.
+
 ## How to route (intent → path)
 
 Read the intent and follow the route. Load the matching skill and follow it. If the request combines

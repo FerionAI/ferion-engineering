@@ -32,7 +32,7 @@ Covers the full cycle (idea to merge) for PM, QA and dev.
   constitution sync, playbook index, hook tests, leak check).
 
 ## The 30 skills (quick map)
-Entry/setup: `setup` (guided, no code), `start` (NL router), `epic` (PM: epic→issues),
+Entry/setup: `setup` (guided, no code), `start` (NL router **+ role/entry panel**), `epic` (PM: epic→issues),
 `discovery` (design thinking), `issues` (source of truth), `ship` (idea→PR), `spec-flow`,
 `preflight` (pre-PR gate).
 Quality: `approve` (tech lead's phase: sweeps the review queue, fixes the mechanical, report, approves on their yes → QA), `qa`, `test-strategy` (test DoR, levels L0–L4), `qa-spec` (scenario→spec + mutation proof), `test-data` (factories/traits), `bug` (red test before the fix), `review`, `design-review` (design gate), `quality`, `privacy`, `design-system`.
@@ -87,6 +87,11 @@ registered (`tl`, skill `approve`) without the PR approved by a human + CI green
   (`test-data`) — shipping automation before the factories would produce debt at scale, generated
   by AI. The mutation proof is the test's gate; `preflight/scripts/qa-lint.sh` blocks preexisting
   data and fixed waits (without a lint, they stay a recommendation).
+- **A role orders the offer, it never restricts** (`start`): "many actors" is a discovery problem,
+  not a reason to split the plugin. The role is **per person** (`~/.claude/ferion-profile.md`,
+  outside git), never in `config/team-config.md` — the last person to run `setup` would set everyone's
+  role. A weak signal **proposes**, never assumes; `skills/ROLES.md` is checked in both directions by
+  the build.
 - **The tech lead closes the code review, not the agent** (ADR-0006): a third milestone, `in QA`
   (skill `approve`). The agent fixes the mechanical gap on the PR branch and turns judgment into
   comments; the approval comes from the tech lead's account, only after their yes, one PR at a time.

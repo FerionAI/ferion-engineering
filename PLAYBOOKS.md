@@ -4,7 +4,7 @@
 > Playbooks are the detail (`references/`) each skill loads on demand (progressive
 > disclosure, P8). The SKILL.md is the entry point; the "how" lives here.
 
-**91 playbooks** across **27** skills.
+**92 playbooks** across **27** skills.
 
 ## agentic-flow (5)
 
@@ -160,9 +160,10 @@
 - [`references/gitlab-setup.md`](skills/setup/references/gitlab-setup.md) — GitLab setup — the required dependency, GitLab edition
 - [`references/role-guide.md`](skills/setup/references/role-guide.md) — Closing by role — what the person can do now
 
-## start (1)
+## start (2)
 
 - [`references/mandatory-flow.md`](skills/start/references/mandatory-flow.md) — The mandatory flow — the 6 steps, the gates and the exceptions
+- [`references/roles-and-panels.md`](skills/start/references/roles-and-panels.md) — The person's role — detect, confirm, and the entry panel
 
 ## test-data (2)
 

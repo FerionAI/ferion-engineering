@@ -4,7 +4,7 @@ An opinionated engineering standard packaged as a **Claude Code and Codex plugin
 a team's good practices, and per-repository context — with **automatic onboarding** and, above all,
 **a development flow that is enforced by hooks instead of described in prose**.
 
-> **Status:** `0.5.0`<!-- x-release-please-version --> — 30 skills, 91 playbooks. Covers the full
+> **Status:** `0.5.0`<!-- x-release-please-version --> — 30 skills, 92 playbooks. Covers the full
 > cycle from **idea to merge** for PM, QA and dev. Everything team-specific comes from your **team
 > config**: run `setup` once and the team is configured; run `onboard` in a real repository and it
 > fills the context from the code.
@@ -99,7 +99,7 @@ bash hooks/flow-gate.sh status
 | Component | Type | What it is for |
 |---|---|---|
 | `setup` | Skill | **Guided configuration, no code** — connects tooling and collects the standard through simple questions (designed for PMs and QAs too). |
-| `start` | Skill | **Natural-language entry point** — understands the request in plain language and routes it, without anyone learning skill names. |
+| `start` | Skill | **Natural-language entry point** — understands the request in plain language and routes it, without anyone learning skill names. Opens with a short panel for the person's role (PM, QA, dev, tech lead) — the role orders the offer, it never restricts (`skills/ROLES.md`). |
 | `ship` | Skill | **Idea-to-PR combo** — orchestrates spec → vertical slice → integrations → quality → review → PR. |
 | `spec-flow` | Skill | Spec-driven flow (specify → clarify → plan → tasks → implement → analyze) anchored in the standard. |
 | `issues` | Skill | GitHub or GitLab issues as the source of truth: read from the issue, write back to it, `Closes #N` closes the loop. |

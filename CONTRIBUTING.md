@@ -51,6 +51,7 @@ sh scripts/validate-plugin.sh
 - Every `SKILL.md` has valid frontmatter, and `name` matches its folder.
 - Every reference cited by a skill exists, and no reference file is orphaned (uncited).
 - `skills/constitution/references/constitution.md` mirrors `memory/constitution.md` exactly.
+- `skills/ROLES.md` cites only skills that exist, and every skill appears under at least one role.
 - `PLAYBOOKS.md` is up to date.
 - The hooks' own tests pass (`flow-gate.test.sh`, `no-ai-signature.test.sh`).
 - Nothing team-specific leaked in (`check-leaks.sh`).

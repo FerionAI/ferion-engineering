@@ -118,6 +118,34 @@ if not os.path.exists("config/team-config.example.md"):
 if os.path.exists("config/team-config.md"):
     err("config/team-config.md is committed — that file is per-team and git-ignored on purpose")
 
+# 7) ROLES.md: the role->skills manifest matches the disk in BOTH directions. Without this it goes
+#    stale within two releases: a skill cited that no longer exists, a new skill no role offers.
+roles_md = "skills/ROLES.md"
+if not os.path.exists(roles_md):
+    err(f"missing manifest: {roles_md}")
+else:
+    m = re.search(r'```yaml\n(.*?)```', open(roles_md, encoding="utf-8").read(), re.S)
+    roles = None
+    if not m:
+        err(f"{roles_md}: the ```yaml manifest block is missing")
+    else:
+        try:
+            roles = yaml.safe_load(m.group(1)) or {}
+        except Exception as e:
+            err(f"{roles_md}: invalid YAML: {str(e).splitlines()[0]}")
+    if isinstance(roles, dict):
+        on_disk = {os.path.basename(os.path.dirname(f)) for f in skills}
+        cited = set()
+        for role, names in roles.items():
+            if not isinstance(names, list):
+                err(f"{roles_md}: role '{role}' is not a list"); continue
+            for s in names:
+                cited.add(s)
+                if s not in on_disk:
+                    err(f"{roles_md}: role '{role}' cites a skill that does not exist -> {s}")
+        for s in sorted(on_disk - cited):
+            err(f"{roles_md}: skill '{s}' appears under no role (not even 'everyone')")
+
 if errors:
     print(f"x validate-plugin: {len(errors)} error(s):")
     for e in errors:
