@@ -10,9 +10,13 @@ Usage:
     python3 session-cost.py --whole-session                     # ignore the baseline (the full session)
     python3 session-cost.py --since=2026-08-26T14:00:00Z        # explicit baseline
     python3 session-cost.py --no-usd                            # skip ccusage (offline/fast)
-    python3 session-cost.py --selftest                          # checks for time, slicing and proration
+    python3 session-cost.py --since=<ISO> --kind=qa             # a QA-automation slice (own marker kind)
+    python3 session-cost.py --selftest                          # checks for time, slicing, proration and comment
 
-Output: one JSON line. A `null` field means the number is unavailable — **do not invent it**: comment
+Output: one JSON line — it includes `requests` (round trips: the number that predicts time and dollars)
+and `comment`, the ready body of the issue comment (`ferion:cost` marker included), so recording cost
+is two calls: run this, then `gh issue comment <n> --body '<comment>'`.
+A `null` field means the number is unavailable — **do not invent it**: comment
 on the issue and say so (`skills/cost/SKILL.md`). Tokens and hours come from the local transcript; the
 USD comes from `ccusage` (the same source as `/usage`), prorated onto the issue's slice by the relative
 price of its tokens.
@@ -191,10 +195,53 @@ def selftest():
     empty.write_text("{}\n", encoding="utf-8")
     assert hours(events(empty)) == (None, None)
     path.unlink(); empty.unlink()
-    print("OK session-cost: active time, wall time, issue slice, dedupe and USD proration")
+    body = comment("s1", tokens(evs), 400, None, 0.14, 1.06, 2, ["opus"])
+    marker = body.splitlines()[0]
+    assert marker == "<!-- ferion:cost tokens=400 active_h=0.14 wall_h=1.06 requests=2 -->", marker  # no USD = key left out, never null
+    assert "| 400 | — | 0.14h | 1.06h | 2 | opus |" in body, body
+    body = comment("s1", tokens(evs), 400, 1.5, 0.14, 1.06, 2, [], ["12", "#15"])
+    assert body.splitlines()[0] == ("<!-- ferion:cost tokens=200 usd=0.75 active_h=0.07 wall_h=0.53 "
+                                    "requests=1 share=1/2 -->"), body              # group: the marker carries 1/N
+    assert "1/2 of the group #12, #15" in body, body
+    assert "kind=qa" in comment("s1", tokens(evs), 400, 1.5, 0.14, 1.06, 2, [], kind="qa").splitlines()[0]
+    print("OK session-cost: active time, wall time, issue slice, dedupe, USD proration and ready comment")
+
+
+def comment(session, tk, total, usd, active, wall, reqs, models, group=(), kind=None):
+    """The ready body of the issue comment: the `ferion:cost` marker (what `health` parses) + the table.
+
+    A number that is unavailable is **left out** of the marker (never `null`): no number, say so.
+    A group (N issues in one PR) puts 1/N of every number in the marker — the same body goes on each
+    issue, so summing the markers gives the group back. A different measuring method (`kind=qa`, a
+    QA-automation slice) gets its own kind: it is never added to or compared with the dev cost.
+    """
+    # ponytail: equal split across the group. Issues of very different size -> split by diff instead.
+    n = max(len(group), 1)
+    share = {"tokens": round(total / n), "usd": usd if usd is None else round(usd / n, 4),
+             "active_h": active if active is None else round(active / n, 2),
+             "wall_h": wall if wall is None else round(wall / n, 2), "requests": round(reqs / n)}
+    if n > 1:
+        share["share"] = f"1/{n}"
+    if kind:
+        share["kind"] = kind
+    marker = " ".join(f"{k}={v}" for k, v in share.items() if v is not None)
+    dash = lambda v, unit="": "—" if v is None else f"{v}{unit}"
+    lines = [f"<!-- ferion:cost {marker} -->",
+             f"**{'QA automation' if kind == 'qa' else 'Dev'} cost** (estimated, session `{session}`)", "",
+             "| tokens | USD | active | wall | round trips | model |", "|---|---|---|---|---|---|",
+             f"| {total:,} | {dash(usd)} | {dash(active, 'h')} | {dash(wall, 'h')} | {reqs} | {', '.join(models) or '—'} |",
+             "", f"in {tk['in']:,} · out {tk['out']:,} · cache read {tk['cache_r']:,} · "
+                 f"cache write {tk['cache_w5m'] + tk['cache_w1h']:,}"]
+    if n > 1:
+        lines.append(f"Split: 1/{n} of the group {', '.join('#' + g.lstrip('#') for g in group)} (one PR) — "
+                     f"the marker carries this issue's share; the table is the whole group.")
+    return "\n".join(lines)
 
 
 def main(argv):
+    if "--help" in argv or "-h" in argv:
+        print(__doc__)
+        return 0
     if "--selftest" in argv:
         return selftest()
     target = next((a for a in argv if not a.startswith("--")), None)
@@ -209,25 +256,42 @@ def main(argv):
         print(json.dumps({"error": f"invalid baseline: {base}"}))
         return 1
 
+    print(json.dumps(report(transcript, issue, base, since, argv), ensure_ascii=False))
+    return 0
+
+
+def report(transcript, issue, base, since, argv):
+    """The JSON line for the measured slice, with the comment ready to post."""
     evs = events(transcript)
     active, wall = hours(evs, since or 0)
     tk = tokens(evs, since or 0)
     usage = None if "--no-usd" in argv else ccusage(transcript.stem)
     costs = {b.get("modelName"): b.get("cost") or 0 for b in (usage or {}).get("modelBreakdowns") or []}
-    print(json.dumps({
+    total = sum(tk.values())
+    usd = prorate(evs, since or 0, costs) if costs else (usage and round(usage.get("totalCost", 0), 4))
+    # Round trips: the number that predicts time AND dollars better than raw tokens — spend is
+    # ~(calls x context), and the clock is the call, not the word (P8).
+    reqs = sum(1 for ts, _, t in evs if t and ts >= (since or 0))
+    models = sorted({m for ts, m, t in evs if t and ts >= (since or 0)})
+    group = issue.split() if issue and since else []
+    kind = next((a.split("=", 1)[1] for a in argv if a.startswith("--kind=")), None)
+    return {
         "session": transcript.stem,
         "scope": "issue" if since else "session",
         "issue": issue,
+        "split": max(len(group), 1),   # N issues in one PR: the marker already carries 1/N (post it on each)
         "since": base if since else None,
-        "tokens": sum(tk.values()),
-        "usd": prorate(evs, since or 0, costs) if costs else (usage and round(usage.get("totalCost", 0), 4)),
+        "tokens": total,
+        "usd": usd,
         "active_hours": active,
         "wall_hours": wall,
-        "models": sorted({m for ts, m, t in evs if t and ts >= (since or 0)}),
+        "requests": reqs,
+        "models": models,
         "token_detail": {"in": tk["in"], "out": tk["out"],
                          "cache_read": tk["cache_r"], "cache_write": tk["cache_w5m"] + tk["cache_w1h"]},
-    }, ensure_ascii=False))
-    return 0
+        # Ready to post: saves the "which marker, which keys" round trip and the one to compose it.
+        "comment": comment(transcript.stem, tk, total, usd, active, wall, reqs, models, group, kind),
+    }
 
 
 if __name__ == "__main__":

@@ -147,6 +147,7 @@ bash hooks/check-sources.sh --selftest || exit 1
 
 # The session cost calculation the `cost` skill writes back to the issue
 python3 skills/cost/scripts/session-cost.py --selftest || exit 1
+python3 skills/cost/scripts/skill-profile.py --selftest || exit 1
 bash skills/preflight/scripts/pr-bots.sh --selftest || exit 1
 
 # Command detection and degradation of preflight step 1 in one call

@@ -36,7 +36,7 @@ Entry/setup: `setup` (guided, no code), `start` (NL router), `epic` (PM: epic→
 `discovery` (design thinking), `issues` (source of truth), `ship` (idea→PR), `spec-flow`,
 `preflight` (pre-PR gate).
 Quality: `qa`, `review`, `design-review` (design gate), `quality`, `privacy`, `design-system`.
-Efficiency/tooling: `agentic-flow`, `cost`, `fullstack`, `workspace` (multi-repo), `integrations`.
+Efficiency/tooling: `agentic-flow`, `cost` (per issue + `skill-profile.py`: where the cost lives per skill), `fullstack`, `workspace` (multi-repo), `integrations`.
 Operations/base: `onboard`, `health`, `context`, `constitution`.
 Delivery/production: `release`, `incident`.
 Infra: always-on hooks (`hooks/` — session banner + flow step, edit, commit/PR (blocks AI
