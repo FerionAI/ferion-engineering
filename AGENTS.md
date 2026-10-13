@@ -32,7 +32,7 @@ say so plainly and offer to run `setup`. Never invent the value.
 - **P5** Observability and docs ship with the change.
 - **P6** Consistency across teams over individual preference.
 - **P7** Security and quality measured: OWASP Top 10 + API Security Top 10; static analysis quality gate on new code; the front end uses the project's design system (progressive adoption) + Nielsen + WCAG 2.2 AA + Core Web Vitals; delivery tracked with DORA; privacy with a legal basis, minimization, retention and no PII in logs/telemetry. (Detail in `quality`, `design-system` and `privacy`.)
-- **P8** Agentic efficiency: write less code (reuse > rewrite; the minimum that works), maximum signal per token, **terse answers by default** (a report only when asked; essential clarification is never skipped), model proportional to the task, subagents with cost discipline — never cutting security, validation, data handling or accessibility. (Detail in `agentic-flow`.)
+- **P8** Agentic efficiency: write less code (reuse > rewrite; the minimum that works), maximum signal per token, **terse answers by default** (closing a step = up to 3 lines + the link; a report only when asked; essential clarification is never skipped), **fewer round trips** (batch the checks into one call; do not re-query what a hook already injected — spend is `calls × context`, not words), model proportional to the task, subagents with cost discipline — never cutting security, validation, data handling or accessibility. (Detail in `agentic-flow`.)
 
 ## Issues as the source of truth — GitHub or GitLab Issues
 The flow runs through AI and the issue (GitHub or GitLab) is the source of truth (intent → issues → dev → QA).

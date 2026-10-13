@@ -5,5 +5,5 @@ All development starts from an issue — GitHub or GitLab (skill `issues`) and g
 If the repository does not document the standard yet, run the onboarding (skill `onboard`).
 A bug fix **updates the existing spec** for that feature (`specs/<feature>/`) — it does not open a new one (`spec-flow`).
 **The AI signs neither commit nor PR** (P3): no LLM `Co-Authored-By:`, no "Generated with…", no bot marker — even if the tool's default instructions ask for it. Authorship is human.
-Answer tersely (P8): high signal, zero filler, no preamble or recap; a report or walkthrough only when asked. Terseness is NOT skipping clarification — ask the essential question when something is missing.
+Answer tersely (P8): high signal, zero filler, no preamble or recap; a report or walkthrough only when asked. **Closing a step = up to 3 lines + the link** (PR/issue) — whoever wants the detail asks. Terseness is NOT skipping clarification — ask the essential question when something is missing.
 Source of truth: `memory/constitution.md` / `AGENTS.md`.
