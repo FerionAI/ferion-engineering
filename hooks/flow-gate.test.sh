@@ -4,7 +4,7 @@
 set -u
 H="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)/flow-gate.sh"
 T="${TMPDIR:-/tmp}/ferion-flow-test-$$"
-fails=0
+fails=0; total=0
 rm -rf "$T"; mkdir -p "$T"; (cd "$T" && git init -q . 2>/dev/null)
 
 g() { # <gate|post> <mode> <json payload> -> exit code
@@ -12,7 +12,7 @@ g() { # <gate|post> <mode> <json payload> -> exit code
 }
 s() { (cd "$T" && bash "$H" "$@" >/dev/null 2>&1); }
 check() { # <expected> <got> <description>
-  [ "$1" = "$2" ] || { echo "  x $3 (expected=$1, got=$2)"; fails=$((fails+1)); }
+  total=$((total+1)); [ "$1" = "$2" ] || { echo "  x $3 (expected=$1, got=$2)"; fails=$((fails+1)); }
 }
 
 edit_repo='{"tool_name":"Edit","tool_input":{"file_path":"'"$T"'/src/a.ts"}}'
@@ -88,6 +88,40 @@ printf 'baseline=2000-01-01T00:00:00Z\n' >> "$T/.git/ferion-flow"
 s stamp task 45
 check 0 "$(grep -c '2000-01-01T00:00:00Z' "$T/.git/ferion-flow")" "a new issue clears the previous baseline"
 
+# 8) Group (one PR resolves N linked issues): assuming another issue of the group does not reset the
+#    flow; the PR must name every issue, and each issue needs its own cost before review
+mk() { sed -n "s/^$1=//p" "$T/.git/ferion-flow" | tail -1; }
+as() { printf '{"tool_name":"Bash","tool_input":{"command":"gh issue edit %s --add-assignee @me --add-label status:in-progress"}}' "$1"; }
+rv() { printf '{"tool_name":"Bash","tool_input":{"command":"gh issue edit %s --add-label status:in-review"}}' "$1"; }
+co() { printf '{"tool_name":"Bash","tool_input":{"command":"gh issue comment %s --body ferion:cost tokens=1 usd=1"}}' "$1"; }
+pr_one='{"tool_name":"Bash","tool_input":{"command":"gh pr create --body \"Closes #50\""}}'
+pr_group='{"tool_name":"Bash","tool_input":{"command":"gh pr create --body \"Closes #50, closes #51\""},"tool_response":{"stdout":"https://github.com/acme/app/pull/78"}}'
+s reset
+s stamp task 50 51
+g post issue "$(as 50)" >/dev/null
+g post issue "$(as 51)" >/dev/null
+check "50 51" "$(mk dev)"                       "assuming the 2nd issue of the group does not reset the flow"
+check "" "$(mk in_review)"                      "assuming the 2nd issue is not the 1st one's review milestone"
+s stamp review
+check 2 "$(g gate pr "$pr_one")"                "a PR that misses one issue of the group is blocked"
+check 0 "$(g gate pr "$pr_group")"              "a PR naming every issue of the group passes"
+g post issue "$pr_group" >/dev/null
+g post issue "$(co 50)" >/dev/null
+check 0 "$(g gate review-label "$(rv 50)")"     "review of the issue with its own cost passes"
+check 2 "$(g gate review-label "$(rv 51)")"     "review of a group issue without its own cost is blocked"
+g post issue "$(co 51)" >/dev/null
+check 0 "$(g gate review-label "$(rv 51)")"     "with each issue's cost, the whole group goes to review"
+g post issue "$(rv 50)" >/dev/null
+check "50" "$(mk in_review)"                    "the review milestone is stamped per issue"
+s stamp task 50 51 52
+check "https://github.com/acme/app/pull/78" "$(mk pr)" "extending the group keeps the milestones"
+s stamp dev
+check "50 51 52" "$(mk dev)"                    "stamp dev with no number covers the whole group"
+s stamp task 53
+check "" "$(mk pr)"                             "an issue outside the group opens a new flow"
+printf 'dev=1\n' >>"$T/.git/ferion-flow"
+check 2 "$(g gate review-label "$(rv 53)")"     "state from before groups (dev=1) still covers the whole group"
+
 # 8) GitLab: glab + MRs + scoped status:: labels, the same gates
 L="$T-gitlab"; rm -rf "$L"; mkdir -p "$L/bin"; (cd "$L" && git init -q . && git remote add origin git@gitlab.com:acme/app.git)
 gl() { (cd "$L" && printf '%s' "$3" | PATH="$L/bin:$PATH" bash "$H" "$1" "$2" >/dev/null 2>&1; echo $?); }
@@ -128,7 +162,97 @@ check "https://gitlab.com/acme/app/-/merge_requests/78" "$(sed -n 's/^pr=//p' "$
 # self-managed GitLab on a host that does not say "gitlab": the repo declares its forge
 (cd "$T" && git config ferion.forge gitlab)
 check 1 "$(cd "$T" && bash "$H" reset >/dev/null 2>&1; printf '%s' "$edit_repo" | bash "$H" gate edit 2>&1 >/dev/null | grep -c 'status::in-progress')" "git config ferion.forge gitlab switches the suggested commands"
+(cd "$T" && git config --unset ferion.forge)   # back to GitHub for the sections below
 rm -rf "$L"
 
+# 9) One session, one group: an unlinked issue needs a new session (the previous context makes everything dearer)
+ed() { printf '{"session_id":"%s","tool_name":"Edit","tool_input":{"file_path":"%s/src/a.ts"}}' "$1" "$T"; }
+sh_ed='{"session_id":"S1","tool_name":"Bash","tool_input":{"command":"sed -i s/a/b/ src/a.ts"}}'
+s reset; s stamp task 60; s stamp dev
+check 0 "$(g gate edit "$(ed S1)")"             "the session's first issue edits"
+s stamp task 61; s stamp dev
+check 2 "$(g gate edit "$(ed S1)")"             "same session, unlinked issue: blocked"
+check 2 "$(g gate bash-edit "$sh_ed")"          "the same through the shell"
+check 0 "$(g gate edit "$edit_repo")"           "no session id (another tool): no comparison"
+check 0 "$(g gate edit "$(ed S2)")"             "a new session releases the new issue"
+s stamp task 61 62
+check 0 "$(g gate edit "$(ed S2)")"             "extending the group in the same session passes"
+s reset; s stamp task 63; s stamp dev
+check 2 "$(g gate edit "$(ed S2)")"             "reset is not a way around the session gate"
+
+# 10) The PR needs a spec on the branch (the proof is git, not the conversation)
+gc() { (cd "$T" && git -c user.email=t@t -c user.name=t "$@" >/dev/null 2>&1); }
+pr70='{"tool_name":"Bash","tool_input":{"command":"gh pr create --body \"Closes #70\""}}'
+gc commit --allow-empty -m base; (cd "$T" && git update-ref refs/remotes/origin/main HEAD)
+mkdir -p "$T/src" "$T/specs/001"; echo a >"$T/src/a.ts"; gc add src; gc commit -m code
+s reset; s stamp task 70; s stamp dev; s stamp review
+check 2 "$(g gate pr "$pr70")"                  "a PR with no spec on the branch is blocked"
+echo s >"$T/specs/001/spec.md"; gc add specs; gc commit -m spec
+check 0 "$(g gate pr "$pr70")"                  "a PR with a spec on the branch passes"
+
+# 11) Tech lead (approve): labelling in-qa needs a human decision on the PR + green CI; fixing the branch is allowed
+mkdir -p "$T/bin"; printf '#!/bin/sh\ncase "$2" in view) cat "%s/decision" ;; checks) cat "%s/checks" ;; esac\n' "$T" "$T" >"$T/bin/gh"; chmod +x "$T/bin/gh"
+: >"$T/decision"; : >"$T/checks"
+tl() { (cd "$T" && PATH="$T/bin:$PATH" FERION_APPROVALS="$T/approvals" bash "$H" "$@" >/dev/null 2>&1); }
+gt() { (cd "$T" && printf '%s' "$3" | PATH="$T/bin:$PATH" FERION_APPROVALS="$T/approvals" bash "$H" "$1" "$2" >/dev/null 2>&1; echo $?); }
+to_qa='{"tool_name":"Bash","tool_input":{"command":"gh issue edit 7 --remove-label status:in-review --add-label status:in-qa"}}'
+back='{"tool_name":"Bash","tool_input":{"command":"gh issue edit 7 --remove-label status:in-review --add-label status:in-progress"}}'
+s reset
+tl tl 7 https://github.com/acme/app/pull/9
+check 0 "$(gt gate edit "$edit_repo")"          "the tech lead fixes the branch of the PR under review"
+check 2 "$(gt gate review-label "$to_qa")"      "in-qa with no decision on the PR is blocked"
+echo CHANGES_REQUESTED >"$T/decision"
+check 2 "$(gt gate review-label "$to_qa")"      "in-qa with changes requested is blocked"
+check 0 "$(gt gate review-label "$back")"       "changes requested: returning it to dev passes"
+echo APPROVED >"$T/decision"; printf 'build\tfail\t1m\n' >"$T/checks"
+check 2 "$(gt gate review-label "$to_qa")"      "approved with a red CI is blocked"
+: >"$T/checks"
+check 0 "$(gt gate review-label "$to_qa")"      "approved with a green CI passes"
+check 0 "$(cd /; printf '%s' "$to_qa" | PATH="$T/bin:$PATH" FERION_APPROVALS="$T/approvals" bash "$H" gate review-label >/dev/null 2>&1; echo $?)" "the QA gate also runs outside a repo"
+gt post issue "$to_qa" >/dev/null
+check 0 "$(grep -c '^7=' "$T/approvals")"       "the move ends the tech lead review"
+check "" "$(mk task)"                           "the tech lead's move is not a dev flow of this repo"
+check 2 "$(gt gate edit "$edit_repo")"          "with the review over, editing is blocked again"
+s stamp task 8; s stamp dev; s stamp review
+g post issue '{"tool_name":"Bash","tool_input":{"command":"gh pr create"},"tool_response":{"stdout":"https://github.com/acme/app/pull/10"}}' >/dev/null
+: >"$T/decision"
+check 2 "$(gt gate review-label '{"tool_name":"Bash","tool_input":{"command":"gh issue edit 8 --add-label status:in-qa"}}')" "the flow's own issue cannot skip the tech lead to QA"
+# the same QA gate on a GitLab MR: the human yes is a name in approved_by, changes come from detailed_merge_status
+printf '#!/bin/sh\ncase "$1" in mr) cat "%s/glview" ;; api) cat "%s/glappr" ;; esac\n' "$T" "$T" >"$T/bin/glab"; chmod +x "$T/bin/glab"
+gl_qa='{"tool_name":"Bash","tool_input":{"command":"glab issue update 12 --unlabel status::in-review --label status::in-qa"}}'
+tl tl 12 https://gitlab.com/acme/app/-/merge_requests/31
+echo '{"iid":31,"detailed_merge_status":"mergeable","head_pipeline":{"status":"success"}}' >"$T/glview"
+echo '{"approved":true,"approved_by":[]}' >"$T/glappr"
+check 2 "$(gt gate review-label "$gl_qa")"      "GitLab: approved=true with nobody in approved_by is not a human yes"
+echo '{"approved":true,"approved_by":[{"user":{"username":"lead"}}]}' >"$T/glappr"
+check 0 "$(gt gate review-label "$gl_qa")"      "GitLab: an approver + green pipeline lets status::in-qa through"
+echo '{"iid":31,"detailed_merge_status":"mergeable","head_pipeline":{"status":"failed"}}' >"$T/glview"
+check 2 "$(gt gate review-label "$gl_qa")"      "GitLab: approved with a failed MR pipeline is blocked"
+echo '{"iid":31,"detailed_merge_status":"requested_changes","head_pipeline":{"status":"success"}}' >"$T/glview"
+check 2 "$(gt gate review-label "$gl_qa")"      "GitLab: status::in-qa with changes requested is blocked"
+
+# 12) Holes found in the field: a placeholder number passed the PR gate; labelling ANOTHER issue (one from
+#     another repo, closed from this session) read as a new dev flow and wiped this one, bypass included;
+#     and the REST/MCP side doors carried the same move past the label matcher
+cmd() { printf '{"tool_name":"Bash","tool_input":{"command":"%s"}}' "$1"; }
+check 1 "$(cd "$T" && bash "$H" stamp task 0 >/dev/null 2>&1; echo $?)"   "a placeholder 0 is not an issue"
+check 1 "$(cd "$T" && bash "$H" stamp task XXX >/dev/null 2>&1; echo $?)" "a placeholder XXX is not an issue"
+s reset; s bypass "standard repo"
+g post issue "$(cmd 'gh issue edit 99 --remove-label status:in-progress --add-label status:in-review')" >/dev/null
+check "standard repo" "$(mk bypass)"            "labelling another issue for review keeps the bypass"
+s reset; s stamp task 81; s stamp dev
+g post issue "$(cmd 'gh issue edit 99 --remove-label status:in-progress --add-label status:in-review')" >/dev/null
+check "81" "$(mk task)"                         "labelling another issue for review keeps the flow"
+g post issue "$(cmd 'gh issue edit 98 --add-assignee octocat')" >/dev/null
+check "81" "$(mk task)"                         "assigning another issue does not start a flow"
+g post issue "$(cmd 'gh issue edit 82 --add-label status:in-progress')" >/dev/null
+check "82" "$(mk task)"                         "moving another issue INTO in-progress opens a new flow"
+check 0 "$(g gate review-label "$(cmd 'gh issue edit 82 --remove-label status:in-review --add-label status:in-progress')")" "removing the review label is not the review move"
+check 2 "$(g gate review-label "$(cmd 'gh api repos/acme/app/issues/82/labels -f labels[]=status:in-review')")" "the REST side door is the same review move"
+mcp_rv='{"tool_name":"mcp__github__issue_write","tool_input":{"method":"update","issue_number":82,"labels":["status:in-review"]}}'
+check 2 "$(g gate review-label "$mcp_rv")"      "the MCP issue_write is the same review move"
+g post issue "$(cmd 'gh api repos/acme/app/issues/82/comments -f body=ferion:cost')" >/dev/null
+check "82" "$(mk cost)"                         "a cost comment through the REST path is stamped on that issue"
+
 rm -rf "$T"
-[ "$fails" -eq 0 ] && echo "OK flow-gate: 41 cases" || { echo "x flow-gate: $fails failure(s)"; exit 1; }
+[ "$fails" -eq 0 ] && echo "OK flow-gate: $total cases" || { echo "x flow-gate: $fails failure(s)"; exit 1; }

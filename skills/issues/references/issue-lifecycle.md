@@ -20,6 +20,7 @@ whole toolchain.
 | in progress | the agent, automatically | `--add-assignee @me --add-label status:in-progress` |
 | PR open | the agent, automatically | `gh pr create` with `Closes #N` |
 | in review | the agent, automatically | `--add-label status:in-review` (after PR + cost) |
+| in QA | the agent, on the tech lead's yes | `--add-label status:in-qa` (PR approved by a human + CI green — `approve`) |
 | QA / closed | **a person** | the agent has no reliable signal that QA passed or the deploy happened |
 
 **From merge onward, humans move it.** The agent does not close issues and does not claim QA

@@ -19,10 +19,10 @@ standards) and `context` (the target app). If the problem or solution is not cle
 
 > **The order is enforced, not suggested.** Steps 1–8 below are the 6 steps of the mandatory flow
 > (`start/references/mandatory-flow.md`): issue → in progress → implement → local review →
-> PR + cost → in review. Start by reading where the flow stopped
-> (`bash ${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh status`) and **resume from there**. The hooks block
-> code without the in-progress milestone, a PR without local review, and the review label without
-> PR + cost — condensing (steps 1/2 on a small change) is allowed; **skipping a step is not**.
+> PR + cost → in review. Where the flow stopped **already came in the session banner** (`[Flow] …`) —
+> **resume from there** without re-querying (`flow-gate.sh status` only if the banner did not come). The hooks block
+> code without the in-progress milestone, a PR without local review or without a spec on the branch,
+> and the review label without PR + cost — condensing (steps 1/2 on a small change) is allowed; **skipping a step is not**.
 
 1. **Specify** — `spec-flow`: spec of what/why → clarify (remove ambiguity) → technical plan.
    **In the plan, already define:** the API contract (`fullstack`), the analytics events and

@@ -11,10 +11,12 @@ explaining in one sentence what you are going to do. Act — do not hand them a 
 
 ## First: the mandatory flow (any request that touches code)
 
-Before routing, **read where the flow is** and resume from there:
+Before routing, **read where the flow is** and resume from there — **the state already came in the
+session banner** (`[Flow] …`, injected by the `SessionStart` hook). Do not run `flow-gate.sh status`
+to re-read what is in front of you: each call pays for the whole context again.
 
 ```bash
-bash ${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh status
+bash ${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh status   # only if the banner did not come (/clear, compacted context)
 ```
 
 > GitLab repo? Same 6 steps with `glab`, MRs and `status::` labels — `issues/references/forge-commands.md`.
@@ -40,8 +42,12 @@ instead of looking for another way around.
 
 - **Resume, do not restart.** State lives in the repo (`.git/ferion-flow`), not in the conversation:
   a new session continues from the step it points to, without redoing what is already closed.
-- **One issue at a time.** A new request mid-flow: finish, or record where you stopped — switching
-  issues resets the previous flow.
+- **One PR at a time, which may resolve several issues.** A batch of linked issues becomes a
+  **group** (`stamp task <n> <n>…`). Strong signal: group and move on, saying so in one line. Weak
+  signal: explain the grouping and ask (criteria in `references/mandatory-flow.md` § Batch). An
+  **unlinked** issue goes to a **new session**: the gate blocks editing another group's code in the
+  same session, because the previous context makes every call dearer. Ask for `/clear` and say what
+  to paste ("continue #N").
 - **Exceptions only when recorded** (hotfix through `incident`, a repo with no issue tracker):
   `flow-gate.sh bypass "<reason>"` and **declare it in the summary**. Never stamp a step that did
   not happen.
@@ -65,7 +71,7 @@ any route that touches code enters the flow at step 1 (or wherever `status` says
 | "production is down", "error in production", "open an incident", "postmortem" | `incident` (response + postmortem; mitigate through `release`) |
 | "ship it / deploy", "put it in production", "canary/rollout", "rollback", "feature flag", "cut a release" | `release` (shipping to production safely) |
 | "is it ready for a PR?", "review everything before I push", "make sure it's spotless", "check it didn't hallucinate" | `preflight` (pre-PR gate) |
-| "review this", "is this ready to merge?", "look at my PR" | `review` (human review, after preflight) |
+| "review this", "is this ready to merge?", "look at my PR" | `review` (Definition of Done; in the pipeline it runs before preflight) |
 | "test cases", "test plan", "report a bug", "what to retest", "exploratory testing", "automate tests", "validate this issue", "can this go to production?" | `qa` (QA kit) |
 | "get me into this project", "I don't know this repo", "document what's here", "start a new project" | `onboard` |
 | "what's the standard", "how do we do it here", "what blocks a merge" | `constitution` |
