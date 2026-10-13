@@ -1,5 +1,5 @@
 {
-  "description": "Injects the engineering standard at session start (with the current flow step) and ENFORCES the mandatory flow issue -> in progress -> implement -> local review -> PR + cost -> in review: the flow-gate.sh gates block (exit 2) editing code without an assumed issue, opening a PR without local review, and labelling for review without PR + cost; PostToolUse stamps each milestone from what the tool actually did. It also blocks AI signatures on commits and PRs (P3). At session start it also reports which declared data sources have no credential configured; blocking a skill on that is opt-in (see the `integrations` skill).",
+  "description": "Injects the engineering standard at session start (with the current flow step) and ENFORCES the mandatory flow issue -> in progress -> implement -> local review -> PR + cost -> in review: the flow-gate.sh gates block (exit 2) editing code without an assumed issue, opening a PR without local review, and labelling for review without PR/MR + cost; PostToolUse stamps each milestone from what the tool actually did. It also blocks AI signatures on commits and PRs (P3). At session start it also reports which declared data sources have no credential configured; blocking a skill on that is opt-in (see the `integrations` skill).",
   "hooks": {
     "SessionStart": [
       {
@@ -59,7 +59,7 @@
         ]
       },
       {
-        "matcher": "mcp__.*(create_pull_request|pull_request_create)",
+        "matcher": "mcp__.*(create_pull_request|pull_request_create|create_merge_request|merge_request_create)",
         "hooks": [
           {
             "type": "command",
@@ -81,7 +81,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Bash|mcp__.*(issue|pull_request)",
+        "matcher": "Bash|mcp__.*(issue|pull_request|merge_request)",
         "hooks": [
           {
             "type": "command",

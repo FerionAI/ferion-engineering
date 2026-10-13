@@ -47,7 +47,8 @@ flow.
 
 ## 3. Codex — the same plugin
 
-Codex reads the same tree: `.codex-plugin/plugin.json` (skills `./skills/`, MCP `./.mcp.json`) and
+Codex reads the same tree: `.codex-plugin/plugin.json` (skills `./skills/`, MCP
+`./.codex-plugin/mcp.json`) and
 the default `hooks/hooks.json`. The repo marketplace is `.agents/plugins/marketplace.json`. Codex
 hands hook commands `CLAUDE_PLUGIN_ROOT` for compatibility, so the hooks are not duplicated.
 
@@ -66,6 +67,7 @@ What differs from Claude, and how the plugin absorbs it:
 | Hook trust | runs once installed | skipped until trusted in `/hooks` (and re-trusted after a hook changes) | install step above; a changed hook after an update must be trusted again |
 | Context from `PreToolUse` | plain stdout reaches the model | plain stdout is ignored | the blocks (exit 2 + stderr) still work; only the soft edit/commit reminders are lost |
 | `${CLAUDE_PLUGIN_ROOT}` in skill text | expanded | not expanded | `start` and `AGENTS.md` tell the agent to resolve it to the plugin root |
+| MCP auth | `headers` with `${GITHUB_PAT}` (`.mcp.json`) | ignores `headers`; uses `bearer_token_env_var` | `.codex-plugin/mcp.json` (same servers — `validate-plugin.sh` checks it); export `GITHUB_PAT` before `codex` |
 | `cost` | reads the Claude transcript | `session-cost.py` does not read Codex sessions yet | record time + the token count Codex reports (`/status`) by hand |
 
 ## 4. Cursor / Gemini — Spec Kit + AGENTS.md

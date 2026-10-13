@@ -28,7 +28,7 @@
     "mcp"
   ],
   "skills": "./skills/",
-  "mcpServers": "./.mcp.json",
+  "mcpServers": "./.codex-plugin/mcp.json",
   "interface": {
     "displayName": "Ferion Engineering",
     "shortDescription": "Engineering standard: idea to merge, flow enforced by hooks.",

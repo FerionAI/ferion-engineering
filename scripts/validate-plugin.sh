@@ -17,7 +17,7 @@ def err(m): errors.append(m)
 
 # 1) Manifest JSON
 for j in [".claude-plugin/plugin.json", ".claude-plugin/marketplace.json", ".codex-plugin/plugin.json",
-          ".agents/plugins/marketplace.json", "hooks/hooks.json", ".mcp.json"]:
+          ".agents/plugins/marketplace.json", ".codex-plugin/mcp.json", "hooks/hooks.json", ".mcp.json"]:
     if not os.path.exists(j):
         err(f"missing manifest: {j}"); continue
     try:
@@ -100,6 +100,12 @@ try:
     for k in ("skills", "mcpServers"):
         if cx.get(k) and not os.path.exists(cx[k]):
             err(f".codex-plugin/plugin.json {k} -> {cx[k]} does not exist")
+    # Codex ignores `headers`, so it has its own MCP file (bearer_token_env_var) — same servers, though
+    if cx.get("mcpServers") and os.path.exists(cx["mcpServers"]):
+        a = set(json.load(open(".mcp.json", encoding="utf-8")).get("mcpServers", {}))
+        b = set(json.load(open(cx["mcpServers"], encoding="utf-8")).get("mcpServers", {}))
+        if a != b:
+            err(f"MCP servers differ: .mcp.json {sorted(a)} != {cx['mcpServers']} {sorted(b)}")
     cm = json.load(open(".agents/plugins/marketplace.json", encoding="utf-8"))
     if not any(p.get("name") == cp.get("name") for p in cm.get("plugins", [])):
         err(".agents/plugins/marketplace.json does not list the plugin")

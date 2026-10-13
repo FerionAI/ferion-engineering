@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Who REALLY reviews this repo's PRs — and who only looks like it.
+# Who REALLY reviews this repo's PRs/MRs (GitHub or GitLab) — and who only looks like it.
 #
 # `preflight` promises "zero automated findings on the PR". That only means something while the
 # automated reviewers are alive: a bot out of quota or with a paused subscription posts a notice and
 # goes quiet, and the PR sails through looking reviewed. This script separates the two cases.
 #
 # Usage:
-#   bash pr-bots.sh [<owner/repo>] [<how many PRs>]   # default: current repo, last 20 merged PRs
+#   bash pr-bots.sh [<owner/repo | group/project>] [<how many>]   # default: current repo, last 20 merged
 #   bash pr-bots.sh --selftest                        # checks the classifier (no network)
 #
 # Output: one line per bot — `<login> · <n> comment(s) · ALIVE|MUTE (<reason>)`.
@@ -31,24 +31,46 @@ selftest() {
 
 [ "${1:-}" = "--selftest" ] && { selftest; exit $?; }
 
-command -v gh >/dev/null 2>&1 || { echo "gh not found — without it there is no way to know who reviews (integrations)." >&2; exit 1; }
-repo=${1:-$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)}
-[ -n "$repo" ] || { echo "repo not identified: pass <owner/repo>." >&2; exit 1; }
 n=${2:-20}
-
-prs=$(gh pr list -R "$repo" --state merged -L "$n" --json number -q '.[].number' 2>/dev/null)
-[ -n "$prs" ] || { echo "no merged PR found in $repo." >&2; exit 1; }
-
 tmp=$(mktemp) || exit 1
 trap 'rm -f "$tmp"' EXIT
-for pr in $prs; do
-  gh api "repos/$repo/issues/$pr/comments" \
-     --jq '.[]|select(.user.type=="Bot")|[.user.login,(.body|gsub("[\n\t]";" ")|.[0:200])]|@tsv' 2>/dev/null
-done >"$tmp"
 
-[ -s "$tmp" ] || { echo "$repo · $(wc -w <<<"$prs") PRs: no bot comments — there is no automated reviewer configured."; exit 0; }
+forge=${FERION_FORGE:-$(git config --get ferion.forge 2>/dev/null)}
+[ -n "$forge" ] || { git remote get-url origin 2>/dev/null | grep -qi gitlab && forge=gitlab || forge=github; }
 
-echo "$repo · $(wc -w <<<"$prs") merged PRs analysed:"
+if [ "$forge" = gitlab ]; then
+  # GitLab: merged MRs -> their notes. Notes carry no bot flag, so bots are told apart by username
+  # (project/group access tokens are `project_<id>_bot_…`, integrations usually say "bot").
+  command -v glab >/dev/null 2>&1 || { echo "glab not found — without it there is no way to know who reviews (integrations)." >&2; exit 1; }
+  repo=${1:-}
+  proj=":id"; [ -n "$repo" ] && proj=$(python3 -c 'import sys,urllib.parse;print(urllib.parse.quote(sys.argv[1],safe=""))' "$repo")
+  repo=${repo:-this repo}
+  prs=$(glab api "projects/$proj/merge_requests?state=merged&per_page=$n" 2>/dev/null \
+        | python3 -c 'import json,sys;[print(m["iid"]) for m in json.load(sys.stdin)]' 2>/dev/null)
+  [ -n "$prs" ] || { echo "no merged MR found in $repo." >&2; exit 1; }
+  for pr in $prs; do
+    glab api "projects/$proj/merge_requests/$pr/notes?per_page=100" 2>/dev/null | python3 -c '
+import json, re, sys
+for x in json.load(sys.stdin):
+    u = (x.get("author") or {}).get("username", "")
+    if not x.get("system") and re.search(r"bot", u, re.I):
+        print(u + "\t" + re.sub(r"[\n\t]", " ", x.get("body") or "")[:200])' 2>/dev/null
+  done >"$tmp"
+else
+  command -v gh >/dev/null 2>&1 || { echo "gh not found — without it there is no way to know who reviews (integrations)." >&2; exit 1; }
+  repo=${1:-$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)}
+  [ -n "$repo" ] || { echo "repo not identified: pass <owner/repo>." >&2; exit 1; }
+  prs=$(gh pr list -R "$repo" --state merged -L "$n" --json number -q '.[].number' 2>/dev/null)
+  [ -n "$prs" ] || { echo "no merged PR found in $repo." >&2; exit 1; }
+  for pr in $prs; do
+    gh api "repos/$repo/issues/$pr/comments" \
+       --jq '.[]|select(.user.type=="Bot")|[.user.login,(.body|gsub("[\n\t]";" ")|.[0:200])]|@tsv' 2>/dev/null
+  done >"$tmp"
+fi
+
+[ -s "$tmp" ] || { echo "$repo · $(wc -w <<<"$prs") PRs/MRs: no bot comments — there is no automated reviewer configured."; exit 0; }
+
+echo "$repo · $(wc -w <<<"$prs") merged PRs/MRs analysed:"
 cut -f1 "$tmp" | sort -u | while read -r bot; do
   total=$(grep -cP "^\Q$bot\E\t" "$tmp")
   mutes=$(grep -P "^\Q$bot\E\t" "$tmp" | cut -f2- | grep -ciE "$MUTE_RE")
@@ -59,4 +81,4 @@ cut -f1 "$tmp" | sort -u | while read -r bot; do
     printf '  %-28s · %2d comment(s) · ALIVE\n' "$bot" "$total"
   fi
 done
-echo "ALIVE bots = what preflight has to anticipate. MUTE bots = this PR ships unreviewed: say so in the summary."
+echo "ALIVE bots = what preflight has to anticipate. MUTE bots = this PR/MR ships unreviewed: say so in the summary."

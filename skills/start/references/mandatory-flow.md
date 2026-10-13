@@ -8,7 +8,7 @@ that touches code) operates on top of it.
 
 | # | Step | Closes when… | Who stamps it |
 |---|---|---|---|
-| 1 | **issue** | the GitHub issue exists (the person cited it, or you asked and created it) | `gh issue create` (auto) or `stamp task <n>` |
+| 1 | **issue** | the issue exists (the person cited it, or you asked and created it) | `gh`/`glab issue create` (auto) or `stamp task <n>` |
 | 2 | **in progress** | the issue has an **owner** (assignee = you) and the `status:in-progress` label | `gh issue edit --add-assignee/--add-label` (auto) or `stamp dev` |
 | 3 | **implement** | spec/plan in `specs/<feature>/` + code as a vertical slice with tests | — (this is the work) |
 | 4 | **local review** | `review` (DoD) + `preflight` (real tools + anti-hallucination) in a **loop until zero findings** | `stamp review` (only the agent knows) |
@@ -17,6 +17,12 @@ that touches code) operates on top of it.
 
 From merge onward, humans move things (QA, deploy) — the agent has no reliable signal and does not
 invent one.
+
+**GitLab:** identical steps with `glab` — `glab issue create`, `glab issue update --assignee/--label
+status::in-progress`, `glab mr create` with `Closes #N`, `glab issue note` for the cost and
+`status::in-review`. The hook recognises both CLIs; the forge (remote, or `git config ferion.forge`)
+only decides which commands it suggests and how it reads CI — the MR's head pipeline instead of
+`gh pr checks`. Command table: `issues/references/forge-commands.md`.
 
 ## The gates (hooks — they really block)
 
@@ -27,8 +33,8 @@ invent one.
 |---|---|---|
 | `Write`/`Edit`/`MultiEdit`/`NotebookEdit` on a repo file | step 2 | code with no assumed issue |
 | `Bash` that writes into the repo (`>`, `>>`, `sed -i`, `tee`, `git apply`, `patch`) | step 2 | the same thing, through the back door |
-| `gh pr create` / the MCP equivalent | step 4 | a PR without the local review closed · a PR **that references no issue** in the body or the branch |
-| labelling `status:in-review` (with step 2 done) | steps 4+5 | moving to review without the PR **and** the cost · labelling with a **red CI check** on the PR (the hook reads `gh pr checks`; with no `gh`/no network it does not block) |
+| `gh pr create` / `glab mr create` / the MCP equivalent | step 4 | a PR without the local review closed · a PR **that references no issue** in the body or the branch |
+| labelling `status:in-review` (with step 2 done) | steps 4+5 | moving to review without the PR **and** the cost · labelling with a **red CI check** on the PR (the hook reads `gh pr checks` or the MR's head pipeline via `glab`; with no CLI/no network it does not block) |
 
 Outside a git repository, and for files outside the repo root (scratch, `/tmp`), **nothing is
 blocked** — there is no delivery there to protect.

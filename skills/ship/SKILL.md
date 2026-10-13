@@ -9,7 +9,7 @@ You take a feature through the whole pipeline, orchestrating the other skills in
 sequence. Goal: deliver end-to-end value with the standard built into every step — do not skip
 steps, but condense when the change is small (say so when you condense).
 
-Before starting: **make sure the GitHub issue exists** (skill `issues`) — if the request does not
+Before starting: **make sure the issue exists** (skill `issues`) — if the request does not
 cite one, ask; if it does not exist, create it with the standard fields. Every change becomes an
 issue (the issue is the source of truth: intent + acceptance criteria). Load `constitution` (the
 standards) and `context` (the target app). If the problem or solution is not clear, start with
@@ -46,7 +46,7 @@ standards) and `context` (the target app). If the problem or solution is not cle
    independent anti-hallucination verification. **Bigger change or UI:** validate the live app on a
    **devserver** with synthetic seed data (Playwright). **Loop until zero findings.** Nothing opens
    a PR without passing here.
-7. **Open the PR** — `gh pr create` with `Closes #N` in the body, a standard title/description and
+7. **Open the PR** — `gh pr create` (GitLab: `glab mr create`, `issues/references/forge-commands.md`) with `Closes #N` in the body, a standard title/description and
    the DoD checklist. Record the dev cost on the issue (`cost`) — it is part of this milestone.
 8. **Confirm the gate** — CI **green** on the PR (`gh pr checks`) and the quality gate green on new
    code, first try (because preflight already guaranteed it). A red check blocks the `in review`

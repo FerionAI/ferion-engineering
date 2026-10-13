@@ -8,6 +8,11 @@
 # State: <gitdir>/ferion-flow (outside version control). Outside a git repo: blocks nothing, stays silent.
 # It also keeps each issue's cost `baseline` (UTC) — what `cost` measures from, so one session's
 # second issue does not inherit the first one's tokens.
+#
+# Forges: GitHub (`gh`, PRs, `status:` labels) and GitLab (`glab`, MRs, scoped `status::` labels).
+# Commands of BOTH are always recognised; the forge only picks which commands the messages suggest
+# and how CI is read. Detected from the `origin` remote; a self-managed GitLab whose host does not
+# say "gitlab" sets `git config ferion.forge gitlab` (or FERION_FORGE=gitlab).
 set -uo pipefail
 
 cmd=${1:-status}
@@ -42,6 +47,24 @@ in_repo() { # <paths, one per line> -> 0 when any of them is a repo file (relati
   done <<<"$1"
   return 1
 }
+forge() {
+  local f=${FERION_FORGE:-$(git config --get ferion.forge 2>/dev/null)}
+  case "$f" in github|gitlab) echo "$f"; return ;; esac
+  git remote get-url origin 2>/dev/null | grep -qi gitlab && echo gitlab || echo github
+}
+if [ "$(forge)" = gitlab ]; then
+  PR=MR; L_PROG='status::in-progress'; L_REV='status::in-review'
+  C_ASSUME='glab issue update <n> --assignee <your-username> --label status::in-progress'
+  C_PR='glab mr create --description "Closes #'; C_COMMENT='glab issue note <n> -m'; C_CHECKS='glab ci status'
+else
+  PR=PR; L_PROG='status:in-progress'; L_REV='status:in-review'
+  C_ASSUME='gh issue edit <n> --add-assignee @me --add-label status:in-progress'
+  C_PR='gh pr create --body "Closes #'; C_COMMENT='gh issue comment <n> --body'; C_CHECKS='gh pr checks'
+fi
+# Recognised on either forge (a GitHub repo may still be driven by an agent that tried glab, and vice versa)
+RE_ISSUE_EDIT='(gh[[:space:]]+issue[[:space:]]+edit|glab[[:space:]]+issue[[:space:]]+update)'
+RE_PR_CREATE='(gh +pr +create|glab +mr +create)'
+RE_MCP_PR='create_pull_request|pull_request_create|create_merge_request|merge_request_create'
 num_after() { # <regex prefix> <text> -> the first issue/PR number that follows it
   grep -oE "$1[[:space:]]+#?[0-9]+" <<<"$2" | head -1 | grep -oE '[0-9]+$'
 }
@@ -54,25 +77,25 @@ flow_status() {
     return
   fi
   if [ -z "$t" ]; then
-    echo "[Flow] no issue in progress in this repo. **Step 1 of 6**: make sure the GitHub issue exists (skill \`issues\`) — ask which one, or create it; do not scan the backlog guessing. Editing code before that is blocked."
+    echo "[Flow] no issue in progress in this repo. **Step 1 of 6**: make sure the issue exists (skill \`issues\`) — ask which one, or create it; do not scan the backlog guessing. Editing code before that is blocked."
     return
   fi
   local m="" next=""
   m="issue #$t ok"
-  if [ -n "$(get dev)" ]; then m="$m · in progress ok"; else m="$m · in progress MISSING"; next="assume the issue (assignee) and label it \`status:in-progress\` (skill \`issues\`)"; fi
+  if [ -n "$(get dev)" ]; then m="$m · in progress ok"; else m="$m · in progress MISSING"; next="assume the issue (assignee) and label it \`$L_PROG\` (skill \`issues\`)"; fi
   if [ -n "$(get review)" ]; then m="$m · local review ok"; elif [ -z "$next" ]; then next="implement (spec-flow/ship), then close the local review: \`review\` + \`preflight\` until ZERO findings, then \`$self stamp review\`"; fi
-  if [ -n "$(get pr)" ]; then m="$m · PR ok"; elif [ -z "$next" ]; then next="open the PR linked to the issue (\`gh pr create\` with \`Closes #$t\`)"; fi
+  if [ -n "$(get pr)" ]; then m="$m · $PR ok"; elif [ -z "$next" ]; then next="open the $PR linked to the issue (\`${C_PR}$t\"\`)"; fi
   local base; base=$(get baseline)
   if [ -n "$(get cost)" ]; then m="$m · cost ok"; elif [ -z "$next" ]; then next="record the dev cost on the issue (skill \`cost\`: tokens, USD and hours${base:+ **for this issue**, measured since $base})"; fi
-  if [ -n "$(get in_review)" ]; then m="$m · in review ok"; next="flow closed (QA and deploy are human gates). New issue: \`$self stamp task <number>\`"; elif [ -z "$next" ]; then next="label the issue \`status:in-review\`"; fi
+  if [ -n "$(get in_review)" ]; then m="$m · in review ok"; next="flow closed (QA and deploy are human gates). New issue: \`$self stamp task <number>\`"; elif [ -z "$next" ]; then next="label the issue \`$L_REV\`"; fi
   echo "[Flow] issue **#$t** — $m. Next step: $next."
 }
 
 missing_for_review() { # what is still missing before the "in review" milestone
   local f=""
   [ -n "$(get review)" ] || f="$f local review (\`review\`+\`preflight\` green, then \`$self stamp review\`) ·"
-  [ -n "$(get pr)" ]     || f="$f PR open and linked to the issue (\`Closes #$(get task)\`) ·"
-  [ -n "$(get cost)" ]   || f="$f dev cost recorded on the issue (skill \`cost\`: session-cost.py -> \`gh issue comment\`) ·"
+  [ -n "$(get pr)" ]     || f="$f $PR open and linked to the issue (\`Closes #$(get task)\`) ·"
+  [ -n "$(get cost)" ]   || f="$f dev cost recorded on the issue (skill \`cost\`: session-cost.py -> \`$C_COMMENT\`) ·"
   echo "Missing:${f% ·}"
 }
 
@@ -90,9 +113,15 @@ block() { # <title> <steps...>
 
 bypassed() { [ -n "$(get bypass)" ]; }
 
-ci_red() { # <PR ref> -> 0 when a check IS failing. No gh / no auth / no checks: never blocks.
+ci_red() { # <PR/MR ref> -> 0 when a check IS failing. No CLI / no auth / no checks: never blocks.
   local ref=$1 out
   [ -n "$ref" ] && [ "$ref" != "1" ] || return 1
+  case "$ref" in */merge_requests/*)   # GitLab: the MR's head pipeline
+    command -v glab >/dev/null 2>&1 || return 1
+    out=$(glab mr view "${ref##*/}" --output json 2>/dev/null | tr -d '\n') || true
+    grep -oE '"head_pipeline"[[:space:]]*:[[:space:]]*\{[^{}]*' <<<"$out" | grep -qE '"status"[[:space:]]*:[[:space:]]*"failed"'
+    return ;;
+  esac
   command -v gh >/dev/null 2>&1 || return 1
   out=$(gh pr checks "$ref" 2>/dev/null) || true
   [ -n "$out" ] || return 1
@@ -134,9 +163,9 @@ case "$cmd" in
         in_repo "$target" || exit 0                         # file outside the repo (scratch/tmp): free
         bypassed || [ -n "$(get dev)" ] || block \
           "editing code before the \`in progress\` milestone." \
-          "Make sure the GitHub issue exists (skill \`issues\`): ask which one, or create it. Do not scan the backlog guessing." \
+          "Make sure the issue exists (skill \`issues\`): ask which one, or create it. Do not scan the backlog guessing." \
           "Go through \`spec-flow\` (specify->clarify->plan->tasks, which generates \`specs/<feature>/\`) — do not jump from the issue straight to code." \
-          "Assume the issue: \`gh issue edit <n> --add-assignee @me --add-label status:in-progress\` — the hook stamps the milestone by itself." \
+          "Assume the issue: \`$C_ASSUME\` — the hook stamps the milestone by itself." \
           "Issue already assumed outside the agent? \`$self stamp task <n>\` and \`$self stamp dev\`."
         cat "$here/edit-reminder.md" ;;
 
@@ -156,30 +185,30 @@ case "$cmd" in
         [ "$writes" = 1 ] || exit 0
         bypassed || [ -n "$(get dev)" ] || block \
           "writing to a repo file (through the shell) before the \`in progress\` milestone." \
-          "Same rule as the editor: GitHub issue (\`issues\`) -> spec-flow -> assume the issue and label it \`status:in-progress\`." \
+          "Same rule as the editor: issue (\`issues\`) -> spec-flow -> assume the issue and label it \`$L_PROG\`." \
           "Issue already assumed outside the agent? \`$self stamp task <n>\` and \`$self stamp dev\`." ;;
 
       pr)
         cmdline=$(cmd_of "$payload")
-        if [ -n "$cmdline" ]; then grep -qE 'gh +pr +create' <<<"$cmdline" || exit 0; fi
+        if [ -n "$cmdline" ]; then grep -qE "$RE_PR_CREATE" <<<"$cmdline" || exit 0; fi
         bypassed || [ -n "$(get review)" ] || block \
-          "opening a PR without closing the local review." \
+          "opening a $PR without closing the local review." \
           "Run the local review: \`review\` (Definition of Done) and \`preflight\` (real tools + anti-hallucination) in a LOOP until zero findings." \
-          "Only once it is green: \`$self stamp review\`, then open the PR."
+          "Only once it is green: \`$self stamp review\`, then open the $PR."
         # A PR nobody can trace back to an issue is a PR nobody can measure later (cost, lead time, adoption).
         # Match the whole payload, not the extracted command: escaped quotes in --title truncate the value.
         t=$(get task); branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
         [ -z "$t" ] || bypassed || grep -qE "#$t([^0-9]|$)" <<<"$payload" || grep -qE "(^|[^0-9])$t([^0-9]|$)" <<<"$branch" || block \
-          "opening a PR that does not reference issue #$t (not in the body, not in the branch)." \
-          "Link it in the body: \`gh pr create --body \"Closes #$t\" …\` (or name the branch \`<type>/$t-<slug>\`)." \
-          "That reference is the only thread tying PR to issue: without it, cost, lead time and pipeline adoption stop being measurable." ;;
+          "opening a $PR that does not reference issue #$t (not in the body, not in the branch)." \
+          "Link it in the body: \`${C_PR}$t\" …\` (or name the branch \`<type>/$t-<slug>\`)." \
+          "That reference is the only thread tying $PR to issue: without it, cost, lead time and pipeline adoption stop being measurable." ;;
 
       review-label)
         cmdline=$(cmd_of "$payload")
         body="$cmdline$payload"
-        grep -q 'status:in-review' <<<"$body" || exit 0
-        n=$(num_after 'gh[[:space:]]+issue[[:space:]]+edit' "$cmdline")
-        [ -z "$n" ] && n=$(val issue_number "$payload")
+        grep -qE 'status::?in-review' <<<"$body" || exit 0
+        n=$(num_after "$RE_ISSUE_EDIT" "$cmdline")
+        [ -z "$n" ] && n=$(val issue_number "$payload"); [ -z "$n" ] && n=$(val issue_iid "$payload")
         t=$(get task)
         [ -z "$t" ] || [ -z "$n" ] || [ "$n" = "$t" ] || exit 0   # another issue: not this flow
         if [ -n "$(get dev)" ]; then
@@ -189,8 +218,8 @@ case "$cmd" in
             "Is this a DIFFERENT move (status regression, manual correction)? \`$self bypass \"out-of-flow move: <reason>\"\`."
           # The gate blocks the PR from OPENING; here it looks again: review with a red CI is guaranteed rework.
           bypassed || ! ci_red "$(get pr)" || block \
-            "labelling for review with a failing CI check on PR $(get pr)." \
-            "See what broke: \`gh pr checks $(get pr)\` — fix it in the SAME PR and wait for green." \
+            "labelling for review with a failing CI check on $PR $(get pr)." \
+            "See what broke: \`$C_CHECKS\` ($(get pr)) — fix it in the SAME $PR and wait for green." \
             "\`preflight\` runs the tools locally; if CI caught what it did not, add that rule to the checklist (\`preflight/references/preflight-checklist.md\`)."
         fi
         cat "$here/issue-transition-reminder.md" ;;
@@ -203,19 +232,19 @@ case "$cmd" in
     cmdline=$(cmd_of "$payload")
     changed=0
 
-    # New issue created (gh prints the URL; the MCP returns "number": N)
-    if grep -qE 'gh +issue +create' <<<"$cmdline" || grep -qE '"(create_issue|issues_create)"|create_issue' <<<"$payload"; then
+    # New issue created (gh/glab print the URL; the MCP returns "number"/"iid": N)
+    if grep -qE '(gh|glab) +issue +create' <<<"$cmdline" || grep -qE '"(create_issue|issues_create)"|create_issue' <<<"$payload"; then
       n=$(grep -oE '/issues/[0-9]+' <<<"$payload" | head -1 | grep -oE '[0-9]+$')
-      [ -n "$n" ] || n=$(grep -oE '"number"[[:space:]]*:[[:space:]]*[0-9]+' <<<"$payload" | head -1 | grep -oE '[0-9]+$')
+      [ -n "$n" ] || n=$(grep -oE '"(number|iid)"[[:space:]]*:[[:space:]]*[0-9]+' <<<"$payload" | head -1 | grep -oE '[0-9]+$')
       [ -n "$n" ] && { "$0" stamp task "$n" >/dev/null; changed=1; }
     fi
 
     # Issue assumed: assignee and/or the in-progress label
-    if grep -qE 'gh +issue +edit' <<<"$cmdline" && grep -qE '\-\-add-assignee|status:in-progress' <<<"$cmdline"; then
-      n=$(num_after 'gh[[:space:]]+issue[[:space:]]+edit' "$cmdline")
+    if grep -qE "$RE_ISSUE_EDIT" <<<"$cmdline" && grep -qE '\-\-(add-)?assignee|status::?in-progress' <<<"$cmdline"; then
+      n=$(num_after "$RE_ISSUE_EDIT" "$cmdline")
       [ -n "$n" ] && { [ "$n" = "$(get task)" ] || "$0" stamp task "$n" >/dev/null; put dev 1; changed=1; }
-    elif grep -q 'status:in-progress' <<<"$payload" && grep -qE 'update_issue|issues_update' <<<"$payload"; then
-      n=$(val issue_number "$payload"); [ -n "$n" ] || n=$(get task)
+    elif grep -qE 'status::?in-progress' <<<"$payload" && grep -qE 'update_issue|issues_update' <<<"$payload"; then
+      n=$(val issue_number "$payload"); [ -n "$n" ] || n=$(val issue_iid "$payload"); [ -n "$n" ] || n=$(get task)
       [ -n "$n" ] && { [ "$n" = "$(get task)" ] || "$0" stamp task "$n" >/dev/null; put dev 1; changed=1; }
     fi
 
@@ -224,15 +253,15 @@ case "$cmd" in
       put cost 1; changed=1
     fi
 
-    # PR opened
-    if grep -qE 'gh +pr +create' <<<"$cmdline" || grep -qE 'create_pull_request|pull_request_create' <<<"$payload"; then
-      # keep the PR URL (gh prints it): the in-review milestone checks that PR's CI through it
-      ref=$(grep -oE 'https://[^"[:space:]]+/pull/[0-9]+' <<<"$payload" | head -1)
+    # PR / MR opened
+    if grep -qE "$RE_PR_CREATE" <<<"$cmdline" || grep -qE "$RE_MCP_PR" <<<"$payload"; then
+      # keep the PR/MR URL (gh/glab print it): the in-review milestone checks its CI through it
+      ref=$(grep -oE 'https://[^"[:space:]\\]+/(pull|merge_requests)/[0-9]+' <<<"$payload" | head -1)
       [ -n "$(get task)" ] && { put pr "${ref:-1}"; changed=1; }
     fi
 
     # Issue labelled for review (the last milestone)
-    if grep -q 'status:in-review' <<<"$payload" && [ -n "$(get dev)" ]; then
+    if grep -qE 'status::?in-review' <<<"$payload" && [ -n "$(get dev)" ]; then
       put in_review 1; changed=1
     fi
 

@@ -25,7 +25,9 @@ Ask the role (PM, QA, Developer, Tech Lead) and adapt the language and the endin
 
 Only one thing is required; everything else is optional and can wait.
 
-1. **GitHub (required)** — this is where the issues, PRs and labels live.
+1. **GitHub or GitLab (one is required)** — this is where the issues, PRs/MRs and labels live.
+   Ask which forge the team uses. **GitLab:** `glab auth status || glab auth login` and follow
+   `references/gitlab-setup.md` (scoped `status::` labels, self-managed hosts). **GitHub:**
    ```bash
    gh auth status || gh auth login
    ```
@@ -37,7 +39,8 @@ Only one thing is required; everything else is optional and can wait.
 
 ## Step 3 — Create the flow labels
 
-The mandatory flow is stamped from labels, so they have to exist:
+The mandatory flow is stamped from labels, so they have to exist (GitLab: the scoped
+`status::in-progress` / `status::in-review` pair from `references/gitlab-setup.md`):
 
 ```bash
 gh label create status:in-progress --color 0E8A16 --description "Someone assumed the issue and is implementing"
@@ -74,7 +77,7 @@ Save the answers as the **team config** so every skill uses real values instead 
 
 ## Step 6 — Verify (show that it works)
 
-Run a simple final checklist and a quick test: list the repository's issues (`gh issue list -L 3`),
+Run a simple final checklist and a quick test: list the repository's issues (`gh issue list -L 3` / `glab issue list -P 3`),
 read one. Mark ✅ what is connected/configured and ⚠️ what is pending, with the next step in one line.
 
 ## Step 7 — Hand over a ready person
@@ -82,7 +85,7 @@ read one. Mark ✅ what is connected/configured and ⚠️ what is pending, with
 Close with what they can do now, in their role (`references/role-guide.md`). For example:
 
 > Done! You can ask me, in your own words: **"break epic #40 into issues"**, and I'll create them on
-> GitHub. Then **"deliver issue #52"** and I'll take it to a finished PR — an engineer only does the
+> GitHub/GitLab. Then **"deliver issue #52"** and I'll take it to a finished PR — an engineer only does the
 > final review. Just talk to me normally; you don't need to know any code.
 
 ## Principles

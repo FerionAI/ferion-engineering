@@ -17,6 +17,8 @@ Before routing, **read where the flow is** and resume from there:
 bash ${CLAUDE_PLUGIN_ROOT}/hooks/flow-gate.sh status
 ```
 
+> GitLab repo? Same 6 steps with `glab`, MRs and `status::` labels — `issues/references/forge-commands.md`.
+>
 > `${CLAUDE_PLUGIN_ROOT}` is the plugin root. If it is empty in your shell (Codex), use the folder
 > two levels above this `SKILL.md` — and the same for every `${CLAUDE_PLUGIN_ROOT}` in other skills.
 
@@ -24,7 +26,7 @@ Every code change goes through 6 steps, **in this order, no skipping and no reor
 
 | # | Step | Closes when… | Where |
 |---|---|---|---|
-| 1 | **issue** | the GitHub issue exists — the person cited it, or you **asked and created it** (do not scan the backlog guessing) | `issues` |
+| 1 | **issue** | the issue exists — the person cited it, or you **asked and created it** (do not scan the backlog guessing) | `issues` |
 | 2 | **in progress** | you **assumed** the issue (assignee) and labelled it `status:in-progress` | `issues` |
 | 3 | **implement** | spec/plan in `specs/<feature>/` and the code as a vertical slice with tests | `spec-flow` → `ship`/`fullstack` |
 | 4 | **local review** | `review` + `preflight` in a **loop until ZERO findings** → `flow-gate.sh stamp review` | `review`, `preflight` |

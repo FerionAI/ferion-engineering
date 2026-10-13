@@ -16,8 +16,9 @@ check 0 "ls -la"                                                                
 [ -s "$OUT" ] && { echo "  x the hook spoke on a non-commit command"; fails=$((fails+1)); }
 check 2 "git commit -m 'fix: x\n\nCo-Authored-By: Claude <noreply@anthropic.com>'" "an AI-signed commit is blocked"
 check 2 "gh pr create --body 'closes #12\n\n🤖 Generated with Claude Code'"        "an AI-signed PR is blocked"
+check 2 "glab mr create --description 'Closes #12\n\nCo-Authored-By: Codex <noreply@openai.com>'" "an AI-signed GitLab MR is blocked"
 check 0 "git commit -m 'fix(auth): refresh token rotation (#12)'"                  "a clean commit passes"
 check 0 "git commit -m 'feat: pairing\n\nCo-Authored-By: Ada <ada@example.com>'"   "a human co-author is not blocked"
 
 rm -f "$OUT"
-[ "$fails" -eq 0 ] && echo "OK no-ai-signature: 5 cases" || { echo "x no-ai-signature: $fails failure(s)"; exit 1; }
+[ "$fails" -eq 0 ] && echo "OK no-ai-signature: 6 cases" || { echo "x no-ai-signature: $fails failure(s)"; exit 1; }

@@ -1,12 +1,12 @@
 ---
 name: qa
-description: 'QA kit — tools for the quality team to move faster, always with the GitHub issue as the source of truth. Use when someone from (or about) QA asks to: generate test cases from the acceptance criteria, write a bug report, decide what to retest (regression) from a PR, plan exploratory testing, automate tests (e2e/unit), do UX/accessibility QA, reproduce or verify a problem in production, or approve/reject a delivery (the QA gate). Triggers: "test cases", "test plan", "report a bug", "what should I retest", "exploratory testing", "automate tests", "validate this issue", "can this go to production?".'
+description: 'QA kit — tools for the quality team to move faster, always with the issue (GitHub or GitLab) as the source of truth. Use when someone from (or about) QA asks to: generate test cases from the acceptance criteria, write a bug report, decide what to retest (regression) from a PR, plan exploratory testing, automate tests (e2e/unit), do UX/accessibility QA, reproduce or verify a problem in production, or approve/reject a delivery (the QA gate). Triggers: "test cases", "test plan", "report a bug", "what should I retest", "exploratory testing", "automate tests", "validate this issue", "can this go to production?".'
 ---
 
 # QA kit
 
 Tools for QA to work faster and more consistently inside the standard. Two fixed pillars: **the
-GitHub issue is the source of truth** (read from it, write back to it — `issues`) and **the
+issue (GitHub or GitLab) is the source of truth** (read from it, write back to it — `issues`) and **the
 acceptance criteria are the target** (what is not in the criteria or in the tests is not done —
 P2/Definition of Done).
 

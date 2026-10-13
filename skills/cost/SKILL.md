@@ -1,11 +1,11 @@
 ---
 name: cost
-description: Measures what each task costs in tokens and time and records it on the GitHub issue itself (the source of truth), to gauge efficiency and price features (time is money too). Use when someone asks "how much did this task/feature cost", "how many tokens did we spend", "how efficient is this", "how long did it take", "what should we charge for this feature", "cost by task type", or when setting up cost capture. Writes to the issue as a structured comment; feeds the health dashboard.
+description: Measures what each task costs in tokens and time and records it on the issue itself (GitHub or GitLab) (the source of truth), to gauge efficiency and price features (time is money too). Use when someone asks "how much did this task/feature cost", "how many tokens did we spend", "how efficient is this", "how long did it take", "what should we charge for this feature", "cost by task type", or when setting up cost capture. Writes to the issue as a structured comment; feeds the health dashboard.
 ---
 
 # cost — cost and efficiency per task
 
-Measure what each task costs — **tokens + time** — and **write it on the GitHub issue**. Since the
+Measure what each task costs — **tokens + time** — and **write it on the issue** (GitHub, or GitLab via `glab issue note` — `issues/references/forge-commands.md`). Since the
 issue is the source of truth, it should carry its own cost alongside scope and QA. Time is as much
 currency as tokens.
 

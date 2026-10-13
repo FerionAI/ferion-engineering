@@ -1,8 +1,8 @@
 # Engineering Constitution
 
 > **What this document is.** The *source of truth* for your team's engineering standard.
-> It is **portable and LLM-agnostic**: the same text is read by Claude (through this plugin),
-> by Cursor and by Gemini/Codex (through `AGENTS.md` / Spec Kit). Any agent working in a
+> It is **portable and LLM-agnostic**: the same text is read by Claude and Codex (through this
+> plugin), and by Cursor and Gemini (through `AGENTS.md` / Spec Kit). Any agent working in a
 > repository that adopts this standard **must** follow these principles.
 >
 > **How to maintain it.** This file is the only source of truth. Edit here and sync the other
@@ -149,7 +149,7 @@ This is not dogma: legitimate specializations exist. It is the default direction
 
 ## Integrations and tooling — MCP-first
 
-Teams use GitHub plus a set of external tools (observability, analytics, static analysis).
+Teams use GitHub or GitLab plus a set of external tools (observability, analytics, static analysis).
 The standard:
 
 - **MCP-first to operate:** prefer the tool's official MCP over improvising outside it.
@@ -162,10 +162,10 @@ The standard:
 
 ---
 
-## Issues as the source of truth — GitHub Issues
+## Issues as the source of truth — GitHub or GitLab Issues
 
-The whole flow runs through AI, and **the GitHub issue is the source of truth of the work**:
-the product intent, the acceptance criteria, the decisions, the PR link and the QA review all
+The whole flow runs through AI, and **the issue (GitHub or GitLab) is the source of truth of the work**:
+the product intent, the acceptance criteria, the decisions, the PR/MR link and the QA review all
 live on the issue — in the same place as the code.
 
 - **Every change starts from an issue (rule).** Before any development, make sure the issue
@@ -230,7 +230,7 @@ processed by `epic` produces issues that are already Ready.
 
 Work is **done** only when **every** item below is true:
 
-- [ ] The change is tied to a **GitHub issue** (created before starting, if it did not exist) and
+- [ ] The change is tied to an **issue** on the repo's forge (created before starting, if it did not exist) and
       to its spec (P1).
 - [ ] Automated tests covering the new behavior, all passing (P2).
 - [ ] PR reviewed and approved by a peer, with green CI (P3).
