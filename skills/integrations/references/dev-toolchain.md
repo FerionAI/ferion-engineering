@@ -3,6 +3,9 @@
 The two tools every repo in this standard touches: GitHub (code, issues, PRs, CI) and whatever runs
 the quality gate.
 
+> **GitLab:** every command below has its `glab` twin (MRs, `glab ci status`, `glab ci trace`) in
+> `issues/references/forge-commands.md`.
+
 ## GitHub through `gh`
 
 Everything the flow needs works through the CLI, which is why the plugin has no hard MCP dependency.

@@ -60,6 +60,8 @@ Every generated issue carries:
 
   ```bash
   gh issue create --title "..." --body-file /tmp/issue-1.md --label type:feature
+  # GitLab: glab issue create … then link with `glab issue note <child> -m "/relate #<epic>"`
+  # (issues/references/forge-commands.md)
   # then edit the epic's body to include:  - [ ] #123
   ```
 

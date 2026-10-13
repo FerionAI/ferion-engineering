@@ -12,7 +12,10 @@
 
 ## Connected tools
 
-- **GitHub:** `<FILL: org/user>` — `gh auth status` must be green. Required.
+- **Forge:** `<FILL: GitHub / GitLab (gitlab.com or self-managed host)>` — `gh auth status` or
+  `glab auth status` must be green. Required. Self-managed GitLab on a host without "gitlab" in it:
+  `git config ferion.forge gitlab` in each clone.
+- **GitHub org / GitLab group:** `<FILL: org/user or group>`
 - **Static analysis:** `<FILL: SonarQube / CodeQL / none>` `<confirm: MCP or CI only>`
 - **Observability:** `<FILL: Datadog / Grafana / CloudWatch / none>`
 - **Product analytics:** `<FILL: GA4 / Amplitude / PostHog / Clarity / none>`
@@ -20,7 +23,7 @@
 
 ## Issues (the source of truth)
 
-- **Where issues live:** the repository itself (`gh issue`). For work that spans repos, see the
+- **Where issues live:** the repository itself (`gh issue` / `glab issue`). For work that spans repos, see the
   `workspace` skill.
 - **Flow labels** (created once by `setup`, used by the flow gate):
 
@@ -28,6 +31,8 @@
 |---|---|---|
 | `in progress` | `status:in-progress` | someone assumed the issue and started implementing |
 | `in review` | `status:in-review` | the PR is open and the issue is waiting for review |
+
+On GitLab the same milestones use scoped labels: `status::in-progress`, `status::in-review`.
 
 - **Issue types:** `<FILL: label taxonomy — e.g. type:feature, type:bug, type:chore>`
 - **Templates:** `<FILL: path to .github/ISSUE_TEMPLATE, if any>`

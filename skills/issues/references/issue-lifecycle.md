@@ -1,7 +1,8 @@
 # Issue lifecycle and query recipes
 
 The issue is the source of truth from the moment the intent exists until QA signs off. This is the
-lifecycle and the `gh` commands for each stage. Nothing here needs an MCP — `gh` plus a token is the
+lifecycle and the `gh` commands for each stage (GitLab: the same recipes with `glab` — see
+`forge-commands.md`). Nothing here needs an MCP — `gh` plus a token is the
 whole toolchain.
 
 ## The lifecycle

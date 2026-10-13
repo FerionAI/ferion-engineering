@@ -8,10 +8,16 @@ and paste from it. This plugin ships a minimal `.mcp.json` on purpose — add wh
 | Server | Type | Needs | What it unlocks |
 |---|---|---|---|
 | `github` | http | `GITHUB_PAT` | GitHub operations without `gh` (optional — everything in this standard works through `gh`) |
+| `gitlab` | http (OAuth) | browser login — Claude: `/mcp`; Codex: `codex mcp login gitlab` | GitLab projects, issues, merge requests and pipelines (official server, `https://gitlab.com/api/v4/mcp`) |
 | `playwright` | npx | — | driving a real browser: `preflight` devserver validation, UX checks |
 
-**Nothing here is required.** `gh` authenticated is the only hard dependency of the standard
-(`setup/references/github-setup.md`).
+**GitLab on a self-managed instance:** change the `gitlab` URL host to yours in **both**
+`.mcp.json` and `.codex-plugin/mcp.json` (path stays `/api/v4/mcp`). The enforced flow on GitLab is
+written for `glab` (`issues/references/forge-commands.md`); the hook also recognises this MCP's
+`create_merge_request` / `update_issue` calls.
+
+**Nothing here is required.** `gh` (or `glab` on GitLab) authenticated is the only hard dependency
+of the standard (`setup/references/github-setup.md`, `setup/references/gitlab-setup.md`).
 
 ## Worth adding, by category
 

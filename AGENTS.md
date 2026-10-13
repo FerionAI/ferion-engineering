@@ -15,7 +15,7 @@ routes you. To deliver a whole feature (idea to PR), use the `ship` combo. First
 connecting tools → the `setup` skill (guided, no code).
 
 ## Team configuration
-Team-specific values (GitHub org, test tooling, design system, privacy regime, …) come from the
+Team-specific values (forge and org/group, test tooling, design system, privacy regime, …) come from the
 **team config** filled in by `setup` (`config/team-config.md`, git-ignored). **Prefer the team
 config** over the `<FILL: ...>` placeholders in the standard. If a needed value is not configured,
 say so plainly and offer to run `setup`. Never invent the value.
@@ -34,13 +34,13 @@ say so plainly and offer to run `setup`. Never invent the value.
 - **P7** Security and quality measured: OWASP Top 10 + API Security Top 10; static analysis quality gate on new code; the front end uses the project's design system (progressive adoption) + Nielsen + WCAG 2.2 AA + Core Web Vitals; delivery tracked with DORA; privacy with a legal basis, minimization, retention and no PII in logs/telemetry. (Detail in `quality`, `design-system` and `privacy`.)
 - **P8** Agentic efficiency: write less code (reuse > rewrite; the minimum that works), maximum signal per token, **terse answers by default** (a report only when asked; essential clarification is never skipped), model proportional to the task, subagents with cost discipline — never cutting security, validation, data handling or accessibility. (Detail in `agentic-flow`.)
 
-## Issues as the source of truth — GitHub Issues
-The flow runs through AI and the GitHub issue is the source of truth (intent → issues → dev → QA).
+## Issues as the source of truth — GitHub or GitLab Issues
+The flow runs through AI and the issue (GitHub or GitLab) is the source of truth (intent → issues → dev → QA).
 **Every code change starts from an issue — no issue, no code:** if the request does not cite one,
 ask (do not scan the backlog guessing); if it does not exist, create it with the standard fields
 before starting (including small fixes; an emergency hotfix enters through `incident`). An epic
 becomes standard-shaped issues (stack, criteria, DoD) via `epic`. Always start from the issue; write
-back to it (labels, comments, PR link); the issue wins on divergences. QA has its own kit (`qa`:
+back to it (labels, comments, PR/MR link; on GitLab: `glab`, MRs and scoped `status::` labels); the issue wins on divergences. QA has its own kit (`qa`:
 test cases, bug report, regression, exploratory, automation, gate). The issue also carries its own
 cost (tokens + time) — the `cost` skill. (Detail in `issues`, `qa` and `cost`.)
 

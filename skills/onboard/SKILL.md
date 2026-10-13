@@ -52,6 +52,9 @@ exists; **never create a parallel format**. Only generate what is missing. In sh
    gh label create status:in-progress --color 0E8A16 --description "Someone assumed the issue and is implementing" 2>/dev/null
    gh label create status:in-review   --color FBCA04 --description "PR open, waiting for review" 2>/dev/null
    ```
+   GitLab repo: the scoped pair via `glab label create --name status::in-progress …` (see
+   `setup/references/gitlab-setup.md`); self-managed host without "gitlab" in it → also
+   `git config ferion.forge gitlab`.
    If the repo already has an equivalent taxonomy (`in progress`, `wip`, a Project column), **ask
    before creating** and record the mapping in the team config — do not impose a second vocabulary
    on a board that already works. Also record the type labels the team uses (`gh label list`).

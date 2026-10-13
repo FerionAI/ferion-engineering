@@ -26,7 +26,8 @@ Covers the full cycle (idea to merge) for PM, QA and dev.
   detail (progressive disclosure, token economy — P8).
 - Hooks must work in both hosts: Claude sends `Edit`/`Write` with `file_path`, Codex sends
   `apply_patch` with the paths in the patch headers (`flow-gate.sh` handles both; cover new cases
-  in `hooks/flow-gate.test.sh`). Codex manifest version is bumped by release-please.
+  in `hooks/flow-gate.test.sh`). Codex manifest version is bumped by release-please. An MCP server change goes in **both**
+  `.mcp.json` and `.codex-plugin/mcp.json` (Codex ignores `headers`; it uses `bearer_token_env_var`).
 - Validate before committing: `sh scripts/validate-plugin.sh` (manifests, frontmatter, refs,
   constitution sync, playbook index, hook tests, leak check).
 
@@ -52,8 +53,9 @@ review without PR + cost **or with a red CI check** (it reads `gh pr checks` fro
 `skills/start/references/mandatory-flow.md`; checks: `hooks/flow-gate.test.sh`.
 
 ## Key decisions (do not reopen without reason)
-- **GitHub Issues is the tracker**, operated through `gh`. The GitHub MCP is optional; no external
-  tracker is required. This is what makes the plugin installable by anyone.
+- **The repo's forge is the tracker** — GitHub Issues through `gh`, or GitLab issues through `glab`
+  (MRs, scoped `status::` labels; ADR-0003). MCPs are optional; no external tracker is required.
+  This is what makes the plugin installable by anyone. Hook changes are tested on both forges.
 - The end of the flow is a spotless `preflight` (zero automated findings + independent
   anti-hallucination verification).
 - **Flow order is mechanical, not prose.** The pipeline was already written in every skill and the

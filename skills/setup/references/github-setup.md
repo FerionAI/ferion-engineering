@@ -1,7 +1,7 @@
 # GitHub setup — the one required dependency
 
 Everything in this standard rides on GitHub Issues and PRs, operated through `gh`. This is the whole
-setup. If it works, the plugin works.
+setup. If it works, the plugin works. (On GitLab: `gitlab-setup.md`.)
 
 ## 1. Install and authenticate
 

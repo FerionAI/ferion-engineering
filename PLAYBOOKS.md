@@ -4,7 +4,7 @@
 > Playbooks are the detail (`references/`) each skill loads on demand (progressive
 > disclosure, P8). The SKILL.md is the entry point; the "how" lives here.
 
-**76 playbooks** across **21** skills.
+**78 playbooks** across **21** skills.
 
 ## agentic-flow (5)
 
@@ -79,8 +79,9 @@
 - [`references/observability-by-stack.md`](skills/integrations/references/observability-by-stack.md) — Instrumentation per stack
 - [`references/observability.md`](skills/integrations/references/observability.md) — Observability
 
-## issues (2)
+## issues (3)
 
+- [`references/forge-commands.md`](skills/issues/references/forge-commands.md) — Forge commands — GitHub (`gh`) and GitLab (`glab`)
 - [`references/issue-lifecycle.md`](skills/issues/references/issue-lifecycle.md) — Issue lifecycle and query recipes
 - [`references/labels-and-states.md`](skills/issues/references/labels-and-states.md) — Labels and states — moving the issue as the work moves
 
@@ -130,10 +131,11 @@
 - [`references/deploy-strategies.md`](skills/release/references/deploy-strategies.md) — Deploy strategies
 - [`references/rollback-and-flags.md`](skills/release/references/rollback-and-flags.md) — Rollback, feature flags and risky changes — the checklist
 
-## setup (3)
+## setup (4)
 
 - [`references/config-checklist.md`](skills/setup/references/config-checklist.md) — What setup configures — questions and defaults
 - [`references/github-setup.md`](skills/setup/references/github-setup.md) — GitHub setup — the one required dependency
+- [`references/gitlab-setup.md`](skills/setup/references/gitlab-setup.md) — GitLab setup — the required dependency, GitLab edition
 - [`references/role-guide.md`](skills/setup/references/role-guide.md) — Closing by role — what the person can do now
 
 ## start (1)

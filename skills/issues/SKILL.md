@@ -1,17 +1,21 @@
 ---
 name: issues
-description: GitHub Issues are the source of truth of the work — the issue holds everything, from the product intent to the QA review, and the whole flow runs through AI. Use when someone asks to look at issues in a stage ("what's in review / in the sprint / in the backlog", "my issues", "blocked issues"), to take an issue as the basis for work ("take #123 and implement it", "what was asked in this issue"), or to update progress (comment, label, link the PR). Always treat the issue as the base of truth: read from it and write back to it. If a change has no issue, create one (every change becomes an issue, by rule — ask what is missing, do not scan the backlog). Operated through `gh`; the GitHub MCP is optional.
+description: The repository's issues (GitHub or GitLab) are the source of truth of the work — the issue holds everything, from the product intent to the QA review, and the whole flow runs through AI. Use when someone asks to look at issues in a stage ("what's in review / in the sprint / in the backlog", "my issues", "blocked issues"), to take an issue as the basis for work ("take #123 and implement it", "what was asked in this issue"), or to update progress (comment, label, link the PR). Always treat the issue as the base of truth: read from it and write back to it. If a change has no issue, create one (every change becomes an issue, by rule — ask what is missing, do not scan the backlog). Operated through `gh` (GitHub) or `glab` (GitLab); the MCPs are optional.
 ---
 
 # Issues — the source of truth
 
-**The GitHub issue is the source of truth of the work**: the product intent, the acceptance
+**The issue is the source of truth of the work** (GitHub or GitLab): the product intent, the acceptance
 criteria, the decisions, the PR links and the QA reviews live on the issue. Because the whole flow
 runs through AI, the agent always **starts from the issue** and **writes back to it** — it never
 works "on the side".
 
 Operate through the **`gh` CLI** (no extra setup: if `gh auth status` is green, everything below
 works). The GitHub MCP is an optional alternative, not a requirement.
+
+> **GitLab?** Same flow, `glab` instead of `gh`, **MR** instead of PR and scoped labels
+> (`status::in-progress`, `status::in-review`). Every command below has its GitLab twin in
+> `references/forge-commands.md` — use that table, do not improvise flags.
 
 ## Make sure the issue exists before starting (rule: every change becomes an issue)
 
@@ -102,7 +106,7 @@ When you pick up an issue to work on:
    spec/plan are generated and recorded **before** implementing. If the request is a **batch**
    ("work through my issues in state X"), confirm the scope and take **each** issue through the
    pipeline — do not code the batch straight through.
-4. **Write back:** link the PR to the issue (`Closes #N` in the PR body — GitHub closes it on merge),
+4. **Write back:** link the PR to the issue (`Closes #N` in the PR/MR body — the forge closes it on merge),
    comment on progress and decisions, and **move the labels** — the issue reflects reality, it never
    sits in the backlog while the agent works. There are 2 automatic milestones:
    `status:in-progress` when implementation starts, and `status:in-review` when the PR opens. The
@@ -112,7 +116,7 @@ When you pick up an issue to work on:
    issue. From merge onward **humans move the state** — QA, deploy and closing are human gates and
    the agent has no reliable signal that they happened.
 
-## Writing on GitHub (body, comments)
+## Writing on GitHub (body, comments) — GitLab differences in `references/forge-commands.md`
 
 GitHub takes **GitHub Flavored Markdown** everywhere — no special encoding, unlike most trackers.
 Two things worth knowing:

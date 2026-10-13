@@ -4,7 +4,7 @@ An opinionated engineering standard packaged as a **Claude Code and Codex plugin
 a team's good practices, and per-repository context — with **automatic onboarding** and, above all,
 **a development flow that is enforced by hooks instead of described in prose**.
 
-> **Status:** `0.4.0`<!-- x-release-please-version --> — 25 skills, 76 playbooks. Covers the full
+> **Status:** `0.4.0`<!-- x-release-please-version --> — 25 skills, 78 playbooks. Covers the full
 > cycle from **idea to merge** for PM, QA and dev. Everything team-specific comes from your **team
 > config**: run `setup` once and the team is configured; run `onboard` in a real repository and it
 > fills the context from the code.
@@ -34,8 +34,9 @@ each of those steps worth taking.
 ## Requirements
 
 - [Claude Code](https://claude.com/claude-code) or [Codex](https://developers.openai.com/codex) (CLI or app)
-- [`gh`](https://cli.github.com/) authenticated (`gh auth status`) — this is the only hard
-  dependency. Issues, PRs and labels all go through it.
+- [`gh`](https://cli.github.com/) authenticated (`gh auth status`) **or**, on GitLab,
+  [`glab`](https://gitlab.com/gitlab-org/cli) (`glab auth status`) — the only hard dependency.
+  Issues, PRs/MRs and labels all go through it.
 - Python 3 (used by the cost script and the validation script).
 
 ## Install
@@ -66,7 +67,9 @@ codex          # then /plugins → install ferion-engineering, and start a new s
 ```
 
 Then run `/hooks` once and **trust** the plugin hooks — Codex skips untrusted hooks, and without
-them the flow is not enforced. To update: `codex plugin marketplace upgrade`. Differences from
+them the flow is not enforced. For the optional GitHub MCP, export a token before starting Codex
+(`export GITHUB_PAT=$(gh auth token)`); without it only that MCP fails — the flow runs on `gh`.
+To update: `codex plugin marketplace upgrade`. Differences from
 Claude are listed in [docs/multi-llm-distribution.md](docs/multi-llm-distribution.md#3-codex--the-same-plugin).
 
 > **Not a developer (PM/QA)?** Ask someone to install it once; after that, just talk to it in plain
@@ -99,7 +102,7 @@ bash hooks/flow-gate.sh status
 | `start` | Skill | **Natural-language entry point** — understands the request in plain language and routes it, without anyone learning skill names. |
 | `ship` | Skill | **Idea-to-PR combo** — orchestrates spec → vertical slice → integrations → quality → review → PR. |
 | `spec-flow` | Skill | Spec-driven flow (specify → clarify → plan → tasks → implement → analyze) anchored in the standard. |
-| `issues` | Skill | GitHub Issues as the source of truth: read from the issue, write back to it, `Closes #N` closes the loop. |
+| `issues` | Skill | GitHub or GitLab issues as the source of truth: read from the issue, write back to it, `Closes #N` closes the loop. |
 | `epic` | Skill | For PMs: turns an epic into well-formed issues with stack, testable acceptance criteria and the Definition of Done. |
 | `discovery` | Skill | **Design thinking around the pipeline** — empathize (analytics → brief), ideate (diverge/converge), test (usability + post-ship behavioral validation). |
 | `preflight` | Skill | **Pre-PR gate** — reviews everything against every rule + runs the real tools + independent anti-hallucination verification, looping until zero automated findings. |
@@ -121,7 +124,15 @@ bash hooks/flow-gate.sh status
 | `release` | Skill | Shipping to production safely: deploy strategy, feature flags, rollback criteria and mechanics, SemVer from the commits, zero-downtime data migration. |
 | `incident` | Skill | Incident response + blameless postmortem: severity, mitigation, communication, root cause and tracked action items. |
 | Always-on hook | Hook | Injects the standard at session start and on every code change, and **enforces the flow order**. Also blocks AI signatures on commits and PRs (P3). |
-| `.mcp.json` | MCP | Optional MCP connections (GitHub, Playwright). |
+| `.mcp.json` | MCP | Optional MCP connections (GitHub, GitLab, Playwright). Codex reads the same servers from `.codex-plugin/mcp.json`. |
+
+## GitHub or GitLab
+
+The flow is the same on both. On GitLab the agent uses `glab`, opens **MRs** and moves scoped labels
+(`status::in-progress` → `status::in-review`); the hook recognises both CLIs, reads the MR's
+pipeline for the CI check, and picks the forge from the `origin` remote (self-managed host without
+"gitlab" in it: `git config ferion.forge gitlab`). Command table:
+[`skills/issues/references/forge-commands.md`](skills/issues/references/forge-commands.md).
 
 ## First time
 

@@ -46,7 +46,7 @@ caught it go into `preflight` so the error cannot come back.
 ## 5. Blameless postmortem (mandatory for SEV1/SEV2)
 
 Write it following `references/postmortem.md`: timeline, impact, root cause, what helped and what got
-in the way, and **action items with an owner and a date** — each one becomes a **GitHub issue**
+in the way, and **action items with an owner and a date** — each one becomes an **issue** on the forge
 (`issues`). **Blameless:** describe what the system or process allowed, never "so-and-so made a
 mistake". Blame hides the real cause.
 

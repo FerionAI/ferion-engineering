@@ -11,6 +11,10 @@ command.
 | `in progress` | before the first line of code | `gh issue edit <n> --add-assignee @me --add-label status:in-progress` | stamps step 2 → unlocks editing files |
 | `in review` | after the PR is open **and** the cost is recorded | `gh issue edit <n> --add-label status:in-review` | stamps step 6 → closes the flow |
 
+**GitLab:** `glab issue update <n> --assignee <you> --label status::in-progress` and
+`glab issue update <n> --label status::in-review --unlabel status::in-progress` — scoped labels, same
+milestones (`forge-commands.md`). The hook accepts `status:` and `status::` on either forge.
+
 Everything else — QA passed, deployed, done — is a **human gate**. The agent has no reliable signal
 and must not guess.
 
@@ -22,6 +26,9 @@ The standard needs exactly two labels to work. Anything else is your team's taxo
 gh label create status:in-progress --color 0E8A16 --description "Someone assumed the issue and is implementing"
 gh label create status:in-review   --color FBCA04 --description "PR open, waiting for review"
 ```
+
+On GitLab, the scoped pair: `glab label create --name status::in-progress --color '#0E8A16'` and
+`glab label create --name status::in-review --color '#FBCA04'` (`setup/references/gitlab-setup.md`).
 
 Recommended, not required:
 

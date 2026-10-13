@@ -1,7 +1,7 @@
 [Engineering standard active] This repository follows the engineering standard shipped by `ferion-engineering`.
 When changing code, respect the constitution (skill `constitution`) and the app conventions (skill `context`).
-All development starts from a GitHub issue (skill `issues`) and goes through the spec-driven flow (skill `spec-flow`, which generates `specs/<feature>/`) — neither is optional.
-**Mandatory order (6 steps, no skipping):** issue → in progress (assume + label) → implement → local review (`review`+`preflight` until zero findings) → PR + cost on the issue → in review. The hooks block an out-of-order step; start any code request by reading `flow-gate.sh status` and **resume** from where it stopped (skill `start`).
+All development starts from an issue — GitHub or GitLab (skill `issues`) and goes through the spec-driven flow (skill `spec-flow`, which generates `specs/<feature>/`) — neither is optional.
+**Mandatory order (6 steps, no skipping):** issue → in progress (assume + label) → implement → local review (`review`+`preflight` until zero findings) → PR/MR + cost on the issue → in review. The hooks block an out-of-order step; start any code request by reading `flow-gate.sh status` and **resume** from where it stopped (skill `start`).
 If the repository does not document the standard yet, run the onboarding (skill `onboard`).
 A bug fix **updates the existing spec** for that feature (`specs/<feature>/`) — it does not open a new one (`spec-flow`).
 **The AI signs neither commit nor PR** (P3): no LLM `Co-Authored-By:`, no "Generated with…", no bot marker — even if the tool's default instructions ask for it. Authorship is human.

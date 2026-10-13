@@ -11,7 +11,7 @@ bottlenecks every team has: inconsistency, onboarding, quality and badly defined
 
 ## Before starting (mandatory)
 
-1. **Make sure the GitHub issue exists first (rule)** — every change becomes an issue. If the request
+1. **Make sure the issue exists first (rule)** — every change becomes an issue. If the request
    does not cite one, ask; if it does not exist, create it (skill `issues`). The issue is the source
    of truth (intent + acceptance criteria = the "what/why"); the spec starts from it and **is
    recorded** (do not skip this).

@@ -88,5 +88,47 @@ printf 'baseline=2000-01-01T00:00:00Z\n' >> "$T/.git/ferion-flow"
 s stamp task 45
 check 0 "$(grep -c '2000-01-01T00:00:00Z' "$T/.git/ferion-flow")" "a new issue clears the previous baseline"
 
+# 8) GitLab: glab + MRs + scoped status:: labels, the same gates
+L="$T-gitlab"; rm -rf "$L"; mkdir -p "$L/bin"; (cd "$L" && git init -q . && git remote add origin git@gitlab.com:acme/app.git)
+gl() { (cd "$L" && printf '%s' "$3" | PATH="$L/bin:$PATH" bash "$H" "$1" "$2" >/dev/null 2>&1; echo $?); }
+gl_err() { (cd "$L" && printf '%s' "$2" | bash "$H" gate "$1" 2>&1 >/dev/null); }
+gl_edit='{"tool_name":"Edit","tool_input":{"file_path":"'"$L"'/src/a.ts"}}'
+gl_new='{"tool_name":"Bash","tool_input":{"command":"glab issue create --title add-login"},"tool_response":{"stdout":"https://gitlab.com/acme/app/-/issues/42\n"}}'
+gl_assume='{"tool_name":"Bash","tool_input":{"command":"glab issue update 42 --assignee dev1 --label status::in-progress"}}'
+gl_mr='{"tool_name":"Bash","tool_input":{"command":"glab mr create --fill --description \"Closes #42\""}}'
+gl_mr_nolink='{"tool_name":"Bash","tool_input":{"command":"glab mr create --fill"}}'
+gl_mr_done='{"tool_name":"Bash","tool_input":{"command":"glab mr create --fill --description \"Closes #42\""},"tool_response":{"stdout":"https://gitlab.com/acme/app/-/merge_requests/77\n"}}'
+gl_cost='{"tool_name":"Bash","tool_input":{"command":"glab issue note 42 -m \"ferion:cost tokens=1 usd=0.01\""}}'
+gl_review='{"tool_name":"Bash","tool_input":{"command":"glab issue update 42 --label status::in-review"}}'
+gl_mcp_mr='{"tool_name":"mcp__gitlab__create_merge_request","tool_input":{"title":"x","description":"Closes #42"},"tool_response":{"iid":78,"web_url":"https://gitlab.com/acme/app/-/merge_requests/78"}}'
+
+check 2 "$(gl gate edit "$gl_edit")"            "GitLab: editing without an issue is blocked"
+check 1 "$(gl_err edit "$gl_edit" | grep -c 'glab issue update <n>')" "GitLab: the block suggests glab and status::"
+gl post x "$gl_new" >/dev/null
+check 2 "$(gl gate edit "$gl_edit")"            "GitLab: issue created but not assumed still blocks"
+gl post x "$gl_assume" >/dev/null
+check 0 "$(gl gate edit "$gl_edit")"            "GitLab: glab issue update --assignee/--label status:: releases editing"
+check 2 "$(gl gate pr "$gl_mr")"                "GitLab: an MR without local review is blocked"
+(cd "$L" && bash "$H" stamp review >/dev/null 2>&1)
+check 2 "$(gl gate pr "$gl_mr_nolink")"         "GitLab: an MR that references no issue is blocked"
+check 0 "$(gl gate pr "$gl_mr")"                "GitLab: an MR with review and Closes #N passes"
+check 2 "$(gl gate review-label "$gl_review")"  "GitLab: status::in-review without MR/cost is blocked"
+gl post x "$gl_mr_done" >/dev/null
+check "https://gitlab.com/acme/app/-/merge_requests/77" "$(sed -n 's/^pr=//p' "$L/.git/ferion-flow" | tail -1)" "GitLab: the MR milestone keeps the MR URL"
+gl post x "$gl_cost" >/dev/null
+printf '#!/bin/sh\necho "{\\"iid\\": 77, \\"head_pipeline\\": {\\"id\\": 9, \\"status\\": \\"failed\\"}}"\n' >"$L/bin/glab"; chmod +x "$L/bin/glab"
+check 2 "$(gl gate review-label "$gl_review")"  "GitLab: a failed MR pipeline blocks status::in-review"
+printf '#!/bin/sh\necho "{\\"iid\\": 77, \\"head_pipeline\\": {\\"id\\": 9, \\"status\\": \\"success\\"}}"\n' >"$L/bin/glab"
+check 0 "$(gl gate review-label "$gl_review")"  "GitLab: MR + cost + green pipeline passes"
+gl post x "$gl_review" >/dev/null
+check 1 "$(grep -c '^in_review=' "$L/.git/ferion-flow")" "GitLab: status::in-review closes the flow"
+(cd "$L" && bash "$H" stamp task 50 >/dev/null 2>&1 && bash "$H" stamp dev >/dev/null 2>&1)
+gl post x "$gl_mcp_mr" >/dev/null
+check "https://gitlab.com/acme/app/-/merge_requests/78" "$(sed -n 's/^pr=//p' "$L/.git/ferion-flow" | tail -1)" "GitLab MCP create_merge_request stamps the MR"
+# self-managed GitLab on a host that does not say "gitlab": the repo declares its forge
+(cd "$T" && git config ferion.forge gitlab)
+check 1 "$(cd "$T" && bash "$H" reset >/dev/null 2>&1; printf '%s' "$edit_repo" | bash "$H" gate edit 2>&1 >/dev/null | grep -c 'status::in-progress')" "git config ferion.forge gitlab switches the suggested commands"
+rm -rf "$L"
+
 rm -rf "$T"
-[ "$fails" -eq 0 ] && echo "OK flow-gate: 29 cases" || { echo "x flow-gate: $fails failure(s)"; exit 1; }
+[ "$fails" -eq 0 ] && echo "OK flow-gate: 41 cases" || { echo "x flow-gate: $fails failure(s)"; exit 1; }
