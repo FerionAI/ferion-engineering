@@ -1,0 +1,13 @@
+# QA playbooks — index
+
+Each playbook is a **sequence with gates and an observable output**, meant to be followed from start
+to finish. The judgment ("which level", "does this assertion prove the rule?") lives in the owning
+skill; here is only **when to use which**. Playbooks live in the folder of the skill that triggers
+them — hence the paths below.
+
+| Playbook | When to use it | Owner |
+|---|---|---|
+| [`exploratory-session`](exploratory-session.md) | You are about to explore a journey (L4) and want to end with a versioned artifact, not lost knowledge | `qa` |
+
+Your case is not here: the QA kit (`../SKILL.md`) has the tools for test cases, regression, UX/a11y
+and the gate; the index of every playbook in the plugin is `PLAYBOOKS.md` (root, auto-generated).

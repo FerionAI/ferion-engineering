@@ -7,7 +7,7 @@
 The **source of truth of an engineering standard** — one plugin for Claude Code **and Codex**
 (`.claude-plugin/` + `.codex-plugin/`, same skills and hooks) plus a portable core
 (`AGENTS.md` + `memory/constitution.md`) for Cursor/Gemini.
-**Current version: 0.5.0, 25 skills.** <!-- x-release-please-version -->
+**Current version: 0.5.0, 26 skills.** <!-- x-release-please-version -->
 Covers the full cycle (idea to merge) for PM, QA and dev.
 
 > Careful: **this repo IS the standard/plugin**, not a product app. When editing it, follow
@@ -31,11 +31,11 @@ Covers the full cycle (idea to merge) for PM, QA and dev.
 - Validate before committing: `sh scripts/validate-plugin.sh` (manifests, frontmatter, refs,
   constitution sync, playbook index, hook tests, leak check).
 
-## The 25 skills (quick map)
+## The 26 skills (quick map)
 Entry/setup: `setup` (guided, no code), `start` (NL router), `epic` (PM: epic→issues),
 `discovery` (design thinking), `issues` (source of truth), `ship` (idea→PR), `spec-flow`,
 `preflight` (pre-PR gate).
-Quality: `qa`, `review`, `design-review` (design gate), `quality`, `privacy`, `design-system`.
+Quality: `qa`, `test-strategy` (test DoR, levels L0–L4), `review`, `design-review` (design gate), `quality`, `privacy`, `design-system`.
 Efficiency/tooling: `agentic-flow`, `cost` (per issue + `skill-profile.py`: where the cost lives per skill), `fullstack`, `workspace` (multi-repo), `integrations`.
 Operations/base: `onboard`, `health`, `context`, `constitution`.
 Delivery/production: `release`, `incident`.

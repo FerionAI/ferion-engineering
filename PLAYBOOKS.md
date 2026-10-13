@@ -4,7 +4,7 @@
 > Playbooks are the detail (`references/`) each skill loads on demand (progressive
 > disclosure, P8). The SKILL.md is the entry point; the "how" lives here.
 
-**78 playbooks** across **21** skills.
+**82 playbooks** across **22** skills.
 
 ## agentic-flow (5)
 
@@ -102,12 +102,15 @@
 
 - [`references/data-map-and-checklist.md`](skills/privacy/references/data-map-and-checklist.md) — Data map and privacy checklist
 
-## qa (7)
+## qa (10)
 
 - [`references/automation.md`](skills/qa/references/automation.md) — Tool — test automation
 - [`references/bug-report.md`](skills/qa/references/bug-report.md) — Tool — writing a bug report
+- [`references/exploratory-session.md`](skills/qa/references/exploratory-session.md) — Playbook — Exploratory session with a browser agent
 - [`references/exploratory.md`](skills/qa/references/exploratory.md) — Tool — exploratory testing
+- [`references/qa-playbooks.md`](skills/qa/references/qa-playbooks.md) — QA playbooks — index
 - [`references/risk-and-regression.md`](skills/qa/references/risk-and-regression.md) — Tool — risk and regression (what to retest)
+- [`references/scenario-catalog.md`](skills/qa/references/scenario-catalog.md) — Scenario catalog — the shared artifact (v1)
 - [`references/test-cases.md`](skills/qa/references/test-cases.md) — Tool — test cases from the issue
 - [`references/ux-a11y-qa.md`](skills/qa/references/ux-a11y-qa.md) — Tool — UX and accessibility QA
 - [`references/verify-and-gate.md`](skills/qa/references/verify-and-gate.md) — Tool — verify in production + the QA gate
@@ -141,6 +144,10 @@
 ## start (1)
 
 - [`references/mandatory-flow.md`](skills/start/references/mandatory-flow.md) — The mandatory flow — the 6 steps, the gates and the exceptions
+
+## test-strategy (1)
+
+- [`references/test-levels.md`](skills/test-strategy/references/test-levels.md) — Test levels L0–L4 — and why going down is almost always right
 
 ## workspace (2)
 

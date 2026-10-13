@@ -69,5 +69,6 @@ Every generated issue carries:
 
 ## Closing the cycle
 
-PM (epic → issues, here) → dev (`ship` starts from the issue) → QA (`qa` validates on the issue) →
+PM (epic → issues, here) → test DoR (`test-strategy`: the scenarios and the level of each, decided
+with QA and dev before the code) → dev (`ship` starts from the issue) → QA (`qa` validates on the issue) →
 cost (`cost` records on the issue) → all on GitHub, the source of truth.

@@ -10,15 +10,19 @@ issue (GitHub or GitLab) is the source of truth** (read from it, write back to i
 acceptance criteria are the target** (what is not in the criteria or in the tests is not done —
 P2/Definition of Done).
 
-Load only the relevant tool (token economy):
+Load only the relevant tool (token economy) — to run a flow step by step, the index of the QA
+playbooks is `references/qa-playbooks.md`:
 
 | The person wants… | Tool |
 |---|---|
 | Test cases/plan from the issue | `references/test-cases.md` |
+| To record/look up scenarios (the shared artifact) | `references/scenario-catalog.md` |
 | To report a bug (well structured, as an issue) | `references/bug-report.md` |
 | To know what to retest after a change | `references/risk-and-regression.md` |
 | To plan exploratory testing | `references/exploratory.md` |
-| To automate tests (e2e / unit) | `references/automation.md` |
+| To run the exploratory session (L4) step by step | `references/exploratory-session.md` |
+| To automate tests (e2e / unit) — principles and tooling | `references/automation.md` |
+| To decide scenarios and levels at refinement (test DoR) | skill `test-strategy` |
 | UX and accessibility QA | `references/ux-a11y-qa.md` |
 | To verify in staging/production + the approval gate | `references/verify-and-gate.md` |
 

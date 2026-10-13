@@ -4,7 +4,7 @@ An opinionated engineering standard packaged as a **Claude Code and Codex plugin
 a team's good practices, and per-repository context — with **automatic onboarding** and, above all,
 **a development flow that is enforced by hooks instead of described in prose**.
 
-> **Status:** `0.5.0`<!-- x-release-please-version --> — 25 skills, 78 playbooks. Covers the full
+> **Status:** `0.5.0`<!-- x-release-please-version --> — 26 skills, 82 playbooks. Covers the full
 > cycle from **idea to merge** for PM, QA and dev. Everything team-specific comes from your **team
 > config**: run `setup` once and the team is configured; run `onboard` in a real repository and it
 > fills the context from the code.
@@ -28,7 +28,7 @@ So the process here is **mechanical, not textual**:
   restarting.
 - The only way around it is an explicit `bypass "<reason>"` — recorded, and declared in the summary.
 
-Everything else in this plugin — the constitution, the 25 skills, the playbooks — is what makes
+Everything else in this plugin — the constitution, the 26 skills, the playbooks — is what makes
 each of those steps worth taking.
 
 ## Requirements
@@ -108,6 +108,7 @@ bash hooks/flow-gate.sh status
 | `preflight` | Skill | **Pre-PR gate** — reviews everything against every rule + runs the real tools + independent anti-hallucination verification, looping until zero automated findings. |
 | `review` | Skill | Human review after preflight: code taste and "does anything look off?". |
 | `qa` | Skill | QA kit: test cases from the issue, bug reports, risk/regression, exploratory testing, automation, UX/a11y QA, production verification and the approval gate. |
+| `test-strategy` | Skill | **Test DoR at refinement** — PM, QA and dev decide together the epic's scenarios and the level of each (L0–L4) before the code; without it, everything becomes e2e. |
 | `quality` | Skill | Quality and security rule base: OWASP, Nielsen, WCAG, Core Web Vitals, static analysis and DORA metrics. |
 | `design-review` | Skill | **Pre-code design gate** — validates a layout/Figma against the Design Constitution before building; a UX linter with severities. |
 | `design-system` | Skill | Discovers the project's design system and drives its **progressive adoption** — new UI uses it, legacy migrates without blocking deploy. |
