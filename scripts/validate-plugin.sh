@@ -149,6 +149,8 @@ bash hooks/check-sources.sh --selftest || exit 1
 python3 skills/cost/scripts/session-cost.py --selftest || exit 1
 python3 skills/cost/scripts/skill-profile.py --selftest || exit 1
 bash skills/preflight/scripts/pr-bots.sh --selftest || exit 1
+# The QA lint preflight runs before a PR: preexisting data and fixed waits block
+bash skills/preflight/scripts/qa-lint.sh --selftest || exit 1
 
 # Command detection and degradation of preflight step 1 in one call
 bash skills/preflight/scripts/preflight.sh --selftest || exit 1

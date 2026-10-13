@@ -66,7 +66,8 @@ Produce the **technical plan** using `references/templates/plan.md`:
 - Stack/services affected (use `context`), API contracts, data changes.
 - **Is there UI?** Validate the layout with `design-review` before implementing (design system,
   WCAG, all four states).
-- Test strategy (P2) and observability strategy (P5).
+- Test strategy (P2) and observability strategy (P5). Which scenarios, and at what level (L0–L4),
+  is decided at refinement — `test-strategy`; the plan points at the catalog, it does not redo it.
 
 Save as `specs/<feature>/plan.md`.
 

@@ -79,6 +79,38 @@ bash ${CLAUDE_PLUGIN_ROOT}/skills/preflight/scripts/pr-bots.sh    # already runs
 
 `onboard` records this list in the repo conventions; here you confirm it still holds.
 
+## Step 1.3 — What the tests prove (and what they depend on)
+
+A green suite is not a trustworthy suite. Four checks, the first two mechanical:
+
+```bash
+bash ${CLAUDE_PLUGIN_ROOT}/skills/preflight/scripts/qa-lint.sh    # test files in the diff
+```
+
+| Check | What it catches | Blocks? |
+|---|---|---|
+| **Preexisting data** | a literal email/national id/entity id, a hardcoded credential, `SELECT … LIMIT 1` in a test | **yes** |
+| **Fixed wait** | `sleep`, `waitForTimeout`, `cy.wait(2000)` | **yes** |
+| **Mutation proof** | every new/changed test in the diff | **yes** (you prove it) |
+| **Catalog ↔ spec** | an `automated` scenario with no spec, or an e2e spec with no scenario | warning (v1) |
+
+- Found preexisting data? The fix is **a factory with a trait** (`test-data`), not silencing the lint:
+  the test has to create the state it uses. A fixed wait becomes a wait **on a condition**.
+- The lint **lists** the tests that need a mutation proof; you are the one who proves it: break the
+  behavior on purpose and watch the test fail (`qa-spec/references/mutation-proof.md`). A new test in
+  the diff with no proof declared = **do not stamp** local review (step 5). A test that never fails is cost
+  pretending to be a net.
+- A repo with no `scenarios/*.yaml` yet: the lint warns and moves on — do not invent a catalog, offer
+  the first scenario (`qa/references/scenario-catalog.md`).
+- **A test that failed with no behavior change** is not solved by running it again: triage with a
+  named cause, an owner and a deadline in `references/flaky-triage.md`. A retry is not a fix, and
+  "instability" is not a cause — a real concurrency bug labelled flaky is the most expensive finding
+  to lose here.
+- **Take the lint to the repo's CI** (one line in the workflow): a gate that only runs when the agent
+  remembers goes back to being a recommendation. Copy the script into the repo's `scripts/` and run
+  `bash scripts/qa-lint.sh "${{ github.event.pull_request.base.sha }}"` (checkout with
+  `fetch-depth: 0`, so the base is there to diff against).
+
 ## Step 1.5 — Devserver validation (bigger change / touches UI)
 
 A headless test can pass while the screen is broken. For a **bigger change, or one touching UI or a

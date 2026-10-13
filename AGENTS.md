@@ -87,11 +87,15 @@ rule + the real tools (build/lint/types/tests/analysis) + independent anti-hallu
 verification, looping until zero automated findings. Target: no automated reviewer has anything to
 flag; human review is only code taste and "does anything look off?". (Detail in `preflight`.)
 
+## Tests: a scenario is code, test data is created
+Scenarios live versioned in the repo (`scenarios/<journey>.yaml`: stable id, data as **domain traits**, when/then, target level, status) — the artifact PM, QA and dev share, decided at refinement and not after the code. Three non-negotiable rules: **(1) the test creates the state it needs** through a factory/API fixture with a `runId` — no preexisting record, no literal id/email/national id, no `SELECT … LIMIT 1`; **(2) waits are on a condition**, never `sleep`/`waitForTimeout`; **(3) every new test goes through a mutation proof** — break the behavior on purpose and require the test to fail; a test that never fails is cost pretending to be a safety net. Automate at the **lowest level that still proves the behavior** (L0 unit → L1 integration → L2 contract → L3 E2E; L4 is exploratory, human, not automated) and argue for going down, saying the gain and the loss. A defect follows the order **bug → scenario → red test → root-cause fix**: if the test is born green, it does not reproduce the bug and the fix does not start. Without the factory for the trait the scenario needs, **do not generate the test** — ask for the factory. (Detail in the skills `test-strategy`, `qa-spec`, `test-data`, `bug` and `qa`.)
+
 ## Definition of Ready (before starting)
 An issue/spec is ready when: what/why are clear · acceptance criteria are testable · the state matrix
 is filled in · scope and non-scope are explicit · ambiguities are clarified · security/privacy risks
-and API contract impact are flagged · it is sliceable into a thin vertical. Otherwise it goes back to
-refinement — do not start in the dark.
+and API contract impact are flagged · it is sliceable into a thin vertical · **test DoR**: every
+criterion has at least one scenario in the catalog, with level and criticality, and the data traits
+exist (or were requested). Otherwise it goes back to refinement — do not start in the dark.
 
 ## Definition of Done (merge checklist)
 Clear spec · tests passing · PR reviewed + green CI · lint/format/types ok · observability ·

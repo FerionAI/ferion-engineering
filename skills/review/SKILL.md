@@ -27,7 +27,9 @@ Walk the **Definition of Done** and report each item as ✅ ok, ⚠️ attention
 1. **Specification (P1):** does the change match a clear spec/issue? Does it do what was asked, with
    no silent extra scope?
 2. **Tests (P2):** are there tests for the new/changed behavior? Do they cover errors and edges, not
-   just the happy path? Do they pass?
+   just the happy path? Do they pass? **A test authored with AI (a QA spec) has its own script** — can
+   the assertion fail, is the level right, does it prove the rule or mirror the implementation, and
+   the verdict is three-way (gate / nightly / rewrite): `references/review-ai-test.md`.
 3. **Review + CI (P3):** is the PR small and focused? Is CI green? Does the PR body carry
    `Closes #N`?
 4. **Style/types (P4):** do lint, formatting and typing pass? Strong typing (no unjustified

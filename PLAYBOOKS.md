@@ -4,7 +4,7 @@
 > Playbooks are the detail (`references/`) each skill loads on demand (progressive
 > disclosure, P8). The SKILL.md is the entry point; the "how" lives here.
 
-**78 playbooks** across **21** skills.
+**90 playbooks** across **26** skills.
 
 ## agentic-flow (5)
 
@@ -13,6 +13,10 @@
 - [`references/model-selection.md`](skills/agentic-flow/references/model-selection.md) — Choosing the right model for each part of the task
 - [`references/tools.md`](skills/agentic-flow/references/tools.md) — Toolkit by phase — design, brainstorming and requirements
 - [`references/write-less-code.md`](skills/agentic-flow/references/write-less-code.md) — Writing less code — the decision ladder
+
+## bug (1)
+
+- [`references/bug-to-regression.md`](skills/bug/references/bug-to-regression.md) — Playbook — From bug to regression test
 
 ## context (4)
 
@@ -58,10 +62,11 @@
 - [`references/front-to-back.md`](skills/fullstack/references/front-to-back.md) — A front-end person working in the back end
 - [`references/migrations.md`](skills/fullstack/references/migrations.md) — Writing and reviewing a database migration
 
-## health (2)
+## health (3)
 
 - [`references/cost-report.md`](skills/health/references/cost-report.md) — The cost block in the dashboard — where each number comes from
 - [`references/dashboard-template.html`](skills/health/references/dashboard-template.html) — dashboard-template.html
+- [`references/qa-metrics.md`](skills/health/references/qa-metrics.md) — QA metrics on the dashboard — what shows the suite getting better
 
 ## incident (3)
 
@@ -91,26 +96,35 @@
 - [`references/scaffold-new.md`](skills/onboard/references/scaffold-new.md) — Scaffolding blueprint — New mode
 - [`references/scan-existing.md`](skills/onboard/references/scan-existing.md) — Scan script — Existing mode
 
-## preflight (4)
+## preflight (5)
 
 - [`references/anti-hallucination.md`](skills/preflight/references/anti-hallucination.md) — Anti-hallucination — verify that it actually exists
 - [`references/contract-testing.md`](skills/preflight/references/contract-testing.md) — Contract testing before the PR — what CI does not do
 - [`references/devserver-validation.md`](skills/preflight/references/devserver-validation.md) — Devserver validation — the live app before the PR
+- [`references/flaky-triage.md`](skills/preflight/references/flaky-triage.md) — Playbook — Triage of an unstable (flaky) test
 - [`references/preflight-checklist.md`](skills/preflight/references/preflight-checklist.md) — Full pre-PR checklist
 
 ## privacy (1)
 
 - [`references/data-map-and-checklist.md`](skills/privacy/references/data-map-and-checklist.md) — Data map and privacy checklist
 
-## qa (7)
+## qa (10)
 
 - [`references/automation.md`](skills/qa/references/automation.md) — Tool — test automation
 - [`references/bug-report.md`](skills/qa/references/bug-report.md) — Tool — writing a bug report
+- [`references/exploratory-session.md`](skills/qa/references/exploratory-session.md) — Playbook — Exploratory session with a browser agent
 - [`references/exploratory.md`](skills/qa/references/exploratory.md) — Tool — exploratory testing
+- [`references/qa-playbooks.md`](skills/qa/references/qa-playbooks.md) — QA playbooks — index
 - [`references/risk-and-regression.md`](skills/qa/references/risk-and-regression.md) — Tool — risk and regression (what to retest)
+- [`references/scenario-catalog.md`](skills/qa/references/scenario-catalog.md) — Scenario catalog — the shared artifact (v1)
 - [`references/test-cases.md`](skills/qa/references/test-cases.md) — Tool — test cases from the issue
 - [`references/ux-a11y-qa.md`](skills/qa/references/ux-a11y-qa.md) — Tool — UX and accessibility QA
 - [`references/verify-and-gate.md`](skills/qa/references/verify-and-gate.md) — Tool — verify in production + the QA gate
+
+## qa-spec (2)
+
+- [`references/automate-scenario.md`](skills/qa-spec/references/automate-scenario.md) — Playbook — Automate a scenario from the catalog
+- [`references/mutation-proof.md`](skills/qa-spec/references/mutation-proof.md) — Mutation proof — the test of the test
 
 ## quality (11)
 
@@ -131,6 +145,10 @@
 - [`references/deploy-strategies.md`](skills/release/references/deploy-strategies.md) — Deploy strategies
 - [`references/rollback-and-flags.md`](skills/release/references/rollback-and-flags.md) — Rollback, feature flags and risky changes — the checklist
 
+## review (1)
+
+- [`references/review-ai-test.md`](skills/review/references/review-ai-test.md) — Playbook — Review a test written with AI
+
 ## setup (4)
 
 - [`references/config-checklist.md`](skills/setup/references/config-checklist.md) — What setup configures — questions and defaults
@@ -141,6 +159,15 @@
 ## start (1)
 
 - [`references/mandatory-flow.md`](skills/start/references/mandatory-flow.md) — The mandatory flow — the 6 steps, the gates and the exceptions
+
+## test-data (2)
+
+- [`references/factories-and-endpoint.md`](skills/test-data/references/factories-and-endpoint.md) — The test-data endpoint — contract, guard and cleanup
+- [`references/isolation.md`](skills/test-data/references/isolation.md) — The six isolation rules
+
+## test-strategy (1)
+
+- [`references/test-levels.md`](skills/test-strategy/references/test-levels.md) — Test levels L0–L4 — and why going down is almost always right
 
 ## workspace (2)
 
